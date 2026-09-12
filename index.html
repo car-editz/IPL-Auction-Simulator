@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Auction Night — Fantasy Cricket Auction Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-0:#0b1016;
+  --bg-1:#111926;
+  --bg-2:#161f2e;
+  --bg-3:#1d2a3d;
+  --line:#26344a;
+  --line-soft:#1c2839;
+  --gold:#e2b04a;
+  --gold-soft:#f0cf85;
+  --crimson:#c8483a;
+  --crimson-soft:#e2685a;
+  --pitch:#4f8f68;
+  --pitch-soft:#79c79a;
+  --text-0:#f2f4f7;
+  --text-1:#aeb9c9;
+  --text-2:#77879c;
+  --radius-s:6px;
+  --radius-m:10px;
+  --radius-l:16px;
+  --disp:'Barlow Condensed',sans-serif;
+  --body:'Inter',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:radial-gradient(1200px 700px at 15% -10%, #16233a 0%, var(--bg-0) 55%), var(--bg-0);
+  color:var(--text-0);
+  font-family:var(--body);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+#app{min-height:100vh;display:flex;flex-direction:column;}
+::selection{background:var(--gold);color:#1a1200;}
+button{font-family:var(--body);cursor:pointer;}
+input,select{font-family:var(--body);}
+a{color:inherit;}
+.scrollbar-thin::-webkit-scrollbar{width:6px;height:6px;}
+.scrollbar-thin::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+
+/* ---------- shared atoms ---------- */
+.h-disp{font-family:var(--disp);font-weight:700;letter-spacing:0.2px;}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 12px;border-radius:999px;
+  font-size:12px;font-weight:600;color:var(--text-1);
+  background:var(--bg-2);border:1px solid var(--line);
+}
+.btn{
+  border:1px solid var(--line);background:var(--bg-2);color:var(--text-0);
+  padding:12px 22px;border-radius:var(--radius-m);font-size:15px;font-weight:600;
+  transition:transform .12s ease, background .15s ease, border-color .15s ease;
+}
+.btn:hover{background:var(--bg-3);border-color:#33455f;}
+.btn:active{transform:scale(0.97);}
+.btn-gold{background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#1c1300;border:none;box-shadow:0 6px 18px -6px rgba(226,176,74,.55);}
+.btn-gold:hover{filter:brightness(1.05);}
+.btn-crimson{background:linear-gradient(180deg,var(--crimson-soft),var(--crimson));color:#2a0805;border:none;box-shadow:0 6px 18px -6px rgba(200,72,58,.5);}
+.btn-pitch{background:linear-gradient(180deg,var(--pitch-soft),var(--pitch));color:#062012;border:none;}
+.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;filter:none;box-shadow:none;}
+.btn-ghost{background:transparent;border:1px solid var(--line);}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:8px;}
+.card{background:var(--bg-1);border:1px solid var(--line-soft);border-radius:var(--radius-l);}
+.divider{height:1px;background:var(--line-soft);border:none;margin:0;}
+.small{font-size:12.5px;color:var(--text-1);}
+.tiny{font-size:11px;color:var(--text-2);}
+input[type=text],input[type=number],select{
+  background:var(--bg-2);border:1px solid var(--line);color:var(--text-0);
+  padding:9px 12px;border-radius:8px;font-size:14px;outline:none;
+}
+input[type=text]:focus,input[type=number]:focus,select:focus{border-color:var(--gold);}
+label.field{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--text-1);}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+/* ---------- topbar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;border-bottom:1px solid var(--line-soft);
+  position:sticky;top:0;background:rgba(11,16,22,.86);backdrop-filter:blur(8px);z-index:40;
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-size:20px;font-weight:800;}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);}
+.navlinks{display:flex;gap:6px;flex-wrap:wrap;}
+.navlinks button{background:transparent;border:none;color:var(--text-1);padding:8px 12px;border-radius:8px;font-size:13.5px;font-weight:600;}
+.navlinks button.active{color:var(--text-0);background:var(--bg-2);}
+.navlinks button:hover{color:var(--text-0);}
+
+/* ---------- home ---------- */
+.home-hero{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:80px 20px 60px;position:relative;overflow:hidden;
+}
+.home-hero::before{
+  content:"";position:absolute;inset:0;
+  background:
+   radial-gradient(600px 300px at 50% 0%, rgba(226,176,74,.09), transparent 60%),
+   repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 1px, transparent 1px 68px);
+  pointer-events:none;
+}
+.eyebrow-badge{color:var(--text-2);font-size:13px;margin-bottom:18px;}
+.home-title{
+  font-family:var(--disp);font-weight:800;font-size:clamp(44px,9vw,104px);line-height:0.96;
+  letter-spacing:0.5px;color:var(--text-0);margin:0;
+}
+.home-title span{color:var(--gold);}
+.home-sub{font-size:clamp(15px,2vw,19px);color:var(--text-1);margin:22px 0 40px;max-width:560px;}
+.home-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2;}
+.home-note{margin-top:34px;font-size:12px;color:var(--text-2);max-width:520px;}
+.resume-banner{
+  display:flex;align-items:center;gap:14px;justify-content:space-between;
+  background:var(--bg-1);border:1px solid var(--gold);border-radius:var(--radius-m);
+  padding:14px 18px;margin-bottom:28px;max-width:520px;width:100%;
+}
+
+/* ---------- generic screen shell ---------- */
+.screen{max-width:1180px;margin:0 auto;padding:28px 22px 80px;width:100%;flex:1;}
+.screen-head{margin-bottom:24px;}
+.screen-title{font-family:var(--disp);font-size:38px;font-weight:800;margin:0 0 6px;}
+.screen-desc{color:var(--text-1);font-size:14.5px;margin:0;}
+
+/* ---------- team select ---------- */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-top:20px;}
+.team-tile{
+  border:1px solid var(--line-soft);border-radius:var(--radius-m);padding:18px;
+  background:var(--bg-1);text-align:left;transition:border-color .15s,transform .12s;position:relative;
+}
+.team-tile:hover{border-color:var(--gold);transform:translateY(-2px);}
+.team-tile.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);}
+.team-swatch{width:34px;height:34px;border-radius:8px;margin-bottom:14px;}
+.team-tile h3{margin:0 0 4px;font-family:var(--disp);font-size:20px;font-weight:700;}
+.team-tile .tiny{margin-top:6px;}
+
+/* ---------- settings ---------- */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px;}
+.setting-box{background:var(--bg-1);border:1px solid var(--line-soft);border-radius:var(--radius-m);padding:16px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;}
+.toggle{
+  width:42px;height:24px;border-radius:99px;background:var(--bg-3);border:1px solid var(--line);
+  position:relative;transition:background .15s;flex-shrink:0;
+}
+.toggle.on{background:var(--pitch);}
+.toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;}
+.toggle.on .knob{left:20px;}
+
+/* ---------- auction room ---------- */
+.auction-layout{display:grid;grid-template-columns:230px 1fr 260px;gap:16px;align-items:start;}
+@media(max-width:980px){.auction-layout{grid-template-columns:1fr;}}
+.player-stage{
+  background:linear-gradient(160deg,var(--bg-2),var(--bg-1));
+  border:1px solid var(--line-soft);border-radius:var(--radius-l);
+  padding:26px;position:relative;overflow:hidden;
+}
+.player-stage::before{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(100deg, rgba(226,176,74,.03) 0 2px, transparent 2px 26px);
+  pointer-events:none;
+}
+.stage-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;position:relative;z-index:1;}
+.player-name{font-family:var(--disp);font-size:clamp(32px,5vw,50px);font-weight:800;margin:6px 0 2px;line-height:1;}
+.player-meta{color:var(--text-1);font-size:14px;letter-spacing:.3px;}
+.rating-badge{
+  width:64px;height:64px;border-radius:14px;background:var(--bg-3);border:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;
+}
+.rating-badge b{font-family:var(--disp);font-size:24px;line-height:1;color:var(--gold);}
+.rating-badge span{font-size:9.5px;color:var(--text-2);letter-spacing:.5px;}
+.price-row{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap;position:relative;z-index:1;}
+.price-box{flex:1;min-width:140px;background:var(--bg-1);border:1px solid var(--line-soft);border-radius:var(--radius-m);padding:14px 16px;}
+.price-box .label{font-size:11.5px;color:var(--text-2);text-transform:uppercase;letter-spacing:.6px;}
+.price-box .val{font-family:var(--disp);font-size:26px;font-weight:700;margin-top:4px;}
+.price-box.current .val{color:var(--gold);}
+.bidder-strip{margin-top:14px;font-size:14px;color:var(--text-1);position:relative;z-index:1;}
+.bidder-strip b{color:var(--text-0);}
+.timer-ring{
+  width:52px;height:52px;border-radius:50%;border:3px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:20px;font-weight:700;
+  transition:border-color .2s;
+}
+.timer-ring.hot{border-color:var(--crimson);color:var(--crimson-soft);}
+.stat-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;position:relative;z-index:1;}
+.stat-mini{font-size:11.5px;color:var(--text-2);}
+.bar-track{height:5px;background:var(--bg-3);border-radius:3px;margin-top:5px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--pitch-soft);border-radius:3px;}
+.controls-row{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;}
+.controls-row .btn{flex:1;min-width:120px;}
+.sold-flash{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--disp);font-size:64px;font-weight:800;letter-spacing:2px;z-index:5;
+  background:rgba(8,12,17,.72);backdrop-filter:blur(2px);
+  animation:popIn .35s ease;
+}
+.sold-flash.sold{color:var(--pitch-soft);}
+.sold-flash.unsold{color:var(--crimson-soft);}
+@keyframes popIn{from{transform:scale(0.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+.feed-panel{max-height:210px;overflow-y:auto;margin-top:14px;display:flex;flex-direction:column-reverse;gap:0;}
+.feed-item{font-size:13px;padding:7px 0;border-bottom:1px solid var(--line-soft);color:var(--text-1);}
+.feed-item b{color:var(--text-0);}
+.feed-item.you{color:var(--gold-soft);}
+.feed-item.sold{color:var(--pitch-soft);font-weight:600;}
+.feed-item.unsold{color:var(--crimson-soft);font-weight:600;}
+.feed-item.callout{color:var(--gold-soft);font-style:italic;}
+.confetti-piece{position:absolute;top:-12px;width:8px;height:14px;opacity:0.95;border-radius:2px;animation:confettiFall 1.15s ease-in forwards;z-index:6;}
+@keyframes confettiFall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1;}
+  100%{transform:translateY(240px) rotate(340deg);opacity:0;}
+}
+.wishlist-chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 4px;font-size:12.5px;}
+.target-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(226,176,74,.12);border:1px solid rgba(226,176,74,.4);color:var(--gold-soft);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;margin-top:8px;}
+
+.side-card{padding:14px;margin-bottom:12px;}
+.team-row{
+  display:flex;justify-content:space-between;align-items:center;padding:9px 8px;border-radius:8px;font-size:13px;
+}
+.team-row.me{background:rgba(226,176,74,.1);border:1px solid rgba(226,176,74,.35);}
+.team-row .tname{display:flex;align-items:center;gap:8px;font-weight:600;}
+.team-row .swatch{width:9px;height:9px;border-radius:2px;}
+.progress-track{height:7px;border-radius:4px;background:var(--bg-3);overflow:hidden;margin-top:6px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-soft));}
+
+/* ---------- squad / management ---------- */
+.tab-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tab-btn{border:1px solid var(--line);background:var(--bg-1);color:var(--text-1);padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;}
+.tab-btn.active{background:var(--gold);color:#1c1300;border-color:var(--gold);}
+.player-list-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line-soft);align-items:center;font-size:13.5px;}
+.player-list-row.head{color:var(--text-2);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--line);}
+.role-tag{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--bg-3);color:var(--text-1);display:inline-block;}
+
+.balance-ring{display:flex;align-items:center;gap:18px;}
+.balance-num{font-family:var(--disp);font-size:52px;font-weight:800;color:var(--gold);}
+
+/* ---------- results ---------- */
+.rank-row{
+  display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--radius-m);
+  background:var(--bg-1);border:1px solid var(--line-soft);margin-bottom:10px;
+}
+.rank-num{font-family:var(--disp);font-size:30px;font-weight:800;color:var(--text-2);width:44px;text-align:center;}
+.rank-row.first .rank-num{color:var(--gold);}
+.rank-score{font-family:var(--disp);font-size:26px;font-weight:700;}
+
+.xi-slot{display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+.xi-slot .pos{color:var(--text-2);width:26px;font-size:12px;}
+
+.compare-bar-row{margin-bottom:14px;}
+.compare-bar-row .lbl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-1);margin-bottom:4px;}
+.compare-bar-track{height:10px;background:var(--bg-3);border-radius:5px;overflow:hidden;}
+.compare-bar-fill{height:100%;border-radius:5px;}
+
+.stat-tile{background:var(--bg-1);border:1px solid var(--line-soft);border-radius:var(--radius-m);padding:16px;}
+.stat-tile .label{font-size:11.5px;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;}
+.stat-tile .val{font-family:var(--disp);font-size:22px;font-weight:700;margin-top:6px;}
+.grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+
+.howto-step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line-soft);}
+.howto-num{font-family:var(--disp);font-size:22px;font-weight:800;color:var(--gold);width:32px;}
+
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border:1px solid var(--line-soft);border-radius:var(--radius-m);background:var(--bg-1);margin-bottom:10px;flex-wrap:wrap;gap:10px;}
+
+@media(max-width:640px){
+  .player-list-row{grid-template-columns:2fr 1fr 1fr;font-size:12.5px;}
+  .player-list-row .col-age,.player-list-row .col-nat{display:none;}
+  .topbar{flex-direction:column;align-items:flex-start;gap:10px;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   DATA
+   ========================================================= */
+var ROLES = ["Batter","Wicketkeeper","All-rounder","Fast Bowler","Spinner"];
+var ROLE_SHORT = {"Batter":"BAT","Wicketkeeper":"WK","All-rounder":"AR","Fast Bowler":"FB","Spinner":"SPIN"};
+var IDEAL_ROLE_FRACTION = {"Batter":0.30,"Wicketkeeper":0.10,"All-rounder":0.22,"Fast Bowler":0.24,"Spinner":0.14};
+var ROLE_COLORS = {"Batter":"#2f6fbe","Wicketkeeper":"#3f9e6c","All-rounder":"#7a52b8","Fast Bowler":"#c8483a","Spinner":"#d98a2b"};
+
+/* ---- generated avatar/crest art (no real photos or logos are used anywhere) ---- */
+function svgEsc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function initialsOf(name){
+  var parts = String(name).trim().split(/\s+/);
+  var out = parts[0] ? parts[0][0] : "?";
+  if(parts.length>1) out += parts[parts.length-1][0];
+  return out.toUpperCase();
+}
+function playerAvatarSVG(p, size){
+  size = size||72;
+  var color = ROLE_COLORS[p.role] || "#45607d";
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="display:block;flex-shrink:0;">'+
+    '<circle cx="50" cy="50" r="48" fill="'+color+'"/>'+
+    '<circle cx="50" cy="50" r="48" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2"/>'+
+    '<circle cx="50" cy="38" r="15" fill="rgba(255,255,255,.16)"/>'+
+    '<path d="M20 92 Q50 62 80 92 Z" fill="rgba(255,255,255,.16)"/>'+
+    '<text x="50" y="60" text-anchor="middle" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="36" fill="rgba(255,255,255,.95)">'+svgEsc(initialsOf(p.name))+'</text>'+
+    '</svg>';
+}
+function teamCrestSVG(t, size){
+  size = size||56;
+  var short = (t.short || String(t.name||"").slice(0,3)).toUpperCase();
+  return '<svg width="'+size+'" height="'+(size*1.1)+'" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="display:block;flex-shrink:0;">'+
+    '<path d="M50 4 L92 18 V54 C92 80 74 99 50 108 C26 99 8 80 8 54 V18 Z" fill="'+t.color+'"/>'+
+    '<path d="M50 4 L92 18 V54 C92 80 74 99 50 108 C26 99 8 80 8 54 V18 Z" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"/>'+
+    '<text x="50" y="64" text-anchor="middle" font-family="Barlow Condensed, sans-serif" font-weight="800" font-size="'+(short.length>3?22:28)+'" fill="rgba(255,255,255,.95)">'+svgEsc(short)+'</text>'+
+    '</svg>';
+}
+
+var DEFAULT_TEAM_TEMPLATES = [
+  {name:"Mumbai Indians", short:"MI", color:"#1f5fae"},
+  {name:"Chennai Super Kings", short:"CSK", color:"#e2b04a"},
+  {name:"Royal Challengers Bengaluru", short:"RCB", color:"#c8483a"},
+  {name:"Kolkata Knight Riders", short:"KKR", color:"#5b3a86"},
+  {name:"Rajasthan Royals", short:"RR", color:"#d16bb0"},
+  {name:"Sunrisers Hyderabad", short:"SRH", color:"#e08a2b"},
+  {name:"Delhi Capitals", short:"DC", color:"#3560c9"},
+  {name:"Punjab Kings", short:"PBKS", color:"#b03a4e"},
+  {name:"Lucknow Super Giants", short:"LSG", color:"#3fa8b5"},
+  {name:"Gujarat Titans", short:"GT", color:"#7a7a7a"}
+];
+
+var AI_PERSONALITIES = ["Conservative","Balanced","Aggressive","Superstar Hunter","Value Buyer"];
+
+// Real players from the current IPL 2026 squads (retained cores + auction acquisitions),
+// grouped by the ten real franchises. Ratings/sub-stats are our own approximation for
+// gameplay purposes, not official numbers — but every name, role, nationality and team
+// grouping reflects the actual 2026 rosters.
+var CURATED_PLAYERS = [
+ // Chennai Super Kings
+ ["MS Dhoni","Wicketkeeper","India",82,78,20,82,44,false,2],
+ ["Ruturaj Gaikwad","Batter","India",90,91,20,78,29,false,2],
+ ["Sanju Samson","Wicketkeeper","India",88,89,20,76,31,false,2],
+ ["Shivam Dube","All-rounder","India",83,84,60,70,32,false,1.5],
+ ["Dewald Brevis","Batter","South Africa",81,83,25,72,22,true,1.5],
+ ["Noor Ahmad","Spinner","Afghanistan",85,30,87,68,21,true,2],
+ ["Khaleel Ahmed","Fast Bowler","India",80,25,83,68,28,false,1.5],
+ ["Jamie Overton","All-rounder","England",78,70,76,70,32,true,1],
+ ["Ayush Mhatre","Batter","India",75,78,20,66,18,false,0.75],
+ ["Rahul Chahar","Spinner","India",78,30,80,65,26,false,1],
+ ["Matt Henry","Fast Bowler","New Zealand",84,25,86,70,34,true,1],
+ ["Nathan Ellis","Fast Bowler","Australia",80,25,82,68,30,true,1],
+ ["Sarfaraz Khan","Batter","India",80,82,20,66,28,false,0.75],
+ ["Urvil Patel","Wicketkeeper","India",68,70,20,62,22,false,0.3],
+ ["Mukesh Choudhary","Fast Bowler","India",72,25,75,62,27,false,0.5],
+ // Mumbai Indians
+ ["Rohit Sharma","Batter","India",90,91,20,78,38,false,2],
+ ["Jasprit Bumrah","Fast Bowler","India",96,35,97,75,32,false,2],
+ ["Suryakumar Yadav","Batter","India",93,94,20,74,35,false,2],
+ ["Hardik Pandya","All-rounder","India",90,82,80,78,32,false,2],
+ ["Tilak Varma","Batter","India",86,87,20,70,23,false,1.5],
+ ["Trent Boult","Fast Bowler","New Zealand",89,25,91,72,36,true,2],
+ ["Will Jacks","All-rounder","England",80,82,66,74,27,true,1.5],
+ ["Mitchell Santner","Spinner","New Zealand",83,55,82,72,33,true,1.5],
+ ["Ryan Rickelton","Wicketkeeper","South Africa",82,84,20,70,27,true,1.5],
+ ["Deepak Chahar","Fast Bowler","India",79,40,78,68,33,false,1],
+ ["Naman Dhir","All-rounder","India",76,78,55,68,26,false,0.75],
+ ["Robin Minz","Wicketkeeper","India",68,70,20,62,21,false,0.3],
+ ["Quinton de Kock","Wicketkeeper","South Africa",84,86,20,72,33,true,1.5],
+ ["Corbin Bosch","All-rounder","South Africa",78,70,76,70,30,true,1],
+ ["Ashwani Kumar","Fast Bowler","India",74,25,77,64,24,false,0.5],
+ // Royal Challengers Bengaluru
+ ["Virat Kohli","Batter","India",94,96,20,82,37,false,2],
+ ["Rajat Patidar","Batter","India",85,87,20,70,32,false,1.5],
+ ["Phil Salt","Wicketkeeper","England",87,89,20,74,29,true,2],
+ ["Jitesh Sharma","Wicketkeeper","India",79,80,20,68,32,false,1],
+ ["Krunal Pandya","All-rounder","India",81,78,74,72,34,false,1.5],
+ ["Tim David","Batter","Australia",84,86,30,70,29,true,2],
+ ["Josh Hazlewood","Fast Bowler","Australia",89,25,92,74,35,true,2],
+ ["Bhuvneshwar Kumar","Fast Bowler","India",82,30,84,70,36,false,1.5],
+ ["Romario Shepherd","All-rounder","West Indies",79,76,74,70,29,true,1],
+ ["Jacob Bethell","All-rounder","England",78,79,65,70,22,true,1],
+ ["Suyash Sharma","Spinner","India",76,25,79,64,22,false,0.75],
+ ["Yash Dayal","Fast Bowler","India",76,25,78,65,27,false,0.75],
+ ["Devdutt Padikkal","Batter","India",78,80,20,68,26,false,1],
+ ["Swapnil Singh","Spinner","India",70,40,72,64,33,false,0.5],
+ ["Venkatesh Iyer","All-rounder","India",82,83,60,72,31,false,1.5],
+ // Kolkata Knight Riders
+ ["Ajinkya Rahane","Batter","India",80,82,20,70,37,false,1],
+ ["Sunil Narine","All-rounder","West Indies",87,70,88,74,37,true,2],
+ ["Rinku Singh","Batter","India",85,87,20,74,28,false,1.5],
+ ["Varun Chakravarthy","Spinner","India",84,25,86,68,34,false,1.5],
+ ["Rovman Powell","Batter","West Indies",81,83,25,72,32,true,1.5],
+ ["Cameron Green","All-rounder","Australia",91,88,82,80,26,true,2],
+ ["Matheesha Pathirana","Fast Bowler","Sri Lanka",87,25,89,68,23,true,2],
+ ["Mustafizur Rahman","Fast Bowler","Bangladesh",83,25,85,66,30,true,1.5],
+ ["Harshit Rana","Fast Bowler","India",79,30,80,68,24,false,1],
+ ["Vaibhav Arora","Fast Bowler","India",74,25,76,64,25,false,0.5],
+ ["Angkrish Raghuvanshi","Batter","India",74,76,20,64,20,false,0.5],
+ ["Rachin Ravindra","All-rounder","New Zealand",85,86,72,76,25,true,2],
+ ["Finn Allen","Batter","New Zealand",80,82,20,68,27,true,1],
+ ["Umran Malik","Fast Bowler","India",78,20,82,62,26,false,0.75],
+ ["Manish Pandey","Batter","India",74,76,20,66,36,false,0.5],
+ // Sunrisers Hyderabad
+ ["Abhishek Sharma","Batter","India",88,90,40,74,25,false,2],
+ ["Travis Head","Batter","Australia",89,91,30,72,32,true,2],
+ ["Heinrich Klaasen","Wicketkeeper","South Africa",87,89,20,74,34,true,2],
+ ["Pat Cummins","Fast Bowler","Australia",92,55,94,80,33,true,2],
+ ["Nitish Kumar Reddy","All-rounder","India",82,80,74,74,23,false,1.5],
+ ["Ishan Kishan","Wicketkeeper","India",83,85,20,70,27,false,1.5],
+ ["Harshal Patel","Fast Bowler","India",81,30,83,68,35,false,1.5],
+ ["Brydon Carse","Fast Bowler","England",81,40,83,68,30,true,1.5],
+ ["Mohammed Shami","Fast Bowler","India",86,25,88,68,35,false,2],
+ ["Kamindu Mendis","All-rounder","Sri Lanka",79,78,68,70,26,true,1],
+ ["Aniket Verma","Batter","India",74,76,20,64,23,false,0.5],
+ ["Harsh Dubey","Spinner","India",73,40,75,64,22,false,0.5],
+ ["Jaydev Unadkat","Fast Bowler","India",76,25,78,65,34,false,0.75],
+ ["Zeeshan Ansari","Spinner","India",68,25,70,60,27,false,0.3],
+ ["Eshan Malinga","Fast Bowler","Sri Lanka",70,20,73,60,24,true,0.5],
+ // Delhi Capitals
+ ["KL Rahul","Wicketkeeper","India",90,92,20,78,33,false,2],
+ ["Axar Patel","All-rounder","India",85,72,84,76,32,false,2],
+ ["Kuldeep Yadav","Spinner","India",87,30,89,70,31,false,2],
+ ["Mitchell Starc","Fast Bowler","Australia",91,30,93,74,35,true,2],
+ ["Tristan Stubbs","Batter","South Africa",84,86,25,74,24,true,1.5],
+ ["Karun Nair","Batter","India",79,81,20,68,34,false,1],
+ ["Abishek Porel","Wicketkeeper","India",76,78,20,66,22,false,0.75],
+ ["Nitish Rana","Batter","India",80,82,25,68,32,false,1],
+ ["Ben Duckett","Batter","England",84,86,20,70,31,true,1.5],
+ ["Pathum Nissanka","Batter","Sri Lanka",81,83,20,68,27,true,1.5],
+ ["Kyle Jamieson","Fast Bowler","New Zealand",80,30,82,68,31,true,1],
+ ["Lungi Ngidi","Fast Bowler","South Africa",78,25,80,66,30,true,1],
+ ["Prithvi Shaw","Batter","India",76,79,20,66,26,false,0.75],
+ ["T Natarajan","Fast Bowler","India",79,25,81,66,34,false,1],
+ ["Ashutosh Sharma","Batter","India",77,79,20,66,26,false,0.75],
+ // Gujarat Titans
+ ["Shubman Gill","Batter","India",91,93,20,76,26,false,2],
+ ["Jos Buttler","Wicketkeeper","England",90,92,20,76,35,true,2],
+ ["B Sai Sudharsan","Batter","India",84,86,20,70,24,false,1.5],
+ ["Rashid Khan","Spinner","Afghanistan",93,45,95,76,27,true,2],
+ ["Mohammed Siraj","Fast Bowler","India",87,25,89,72,32,false,2],
+ ["Prasidh Krishna","Fast Bowler","India",82,25,84,68,30,false,1.5],
+ ["Washington Sundar","All-rounder","India",81,76,78,74,26,false,1.5],
+ ["Kagiso Rabada","Fast Bowler","South Africa",91,30,93,76,30,true,2],
+ ["Glenn Phillips","All-rounder","New Zealand",83,84,65,78,29,true,1.5],
+ ["Rahul Tewatia","All-rounder","India",77,76,66,68,32,false,0.75],
+ ["Jason Holder","All-rounder","West Indies",80,74,80,72,34,true,1],
+ ["Tom Banton","Wicketkeeper","England",78,80,20,68,27,true,1],
+ ["Shahrukh Khan","Batter","India",75,77,20,66,27,false,0.75],
+ ["Ishant Sharma","Fast Bowler","India",70,25,72,62,37,false,0.5],
+ ["Nishant Sindhu","All-rounder","India",73,74,62,66,22,false,0.5],
+ // Lucknow Super Giants
+ ["Rishabh Pant","Wicketkeeper","India",91,92,20,76,28,false,2],
+ ["Nicholas Pooran","Wicketkeeper","West Indies",87,89,25,74,30,true,2],
+ ["Aiden Markram","All-rounder","South Africa",82,83,62,74,31,true,1.5],
+ ["Mitchell Marsh","All-rounder","Australia",84,85,68,74,34,true,1.5],
+ ["Mayank Yadav","Fast Bowler","India",85,25,87,68,23,false,2],
+ ["Avesh Khan","Fast Bowler","India",80,25,82,66,29,false,1],
+ ["Digvesh Rathi","Spinner","India",73,30,75,62,27,false,0.5],
+ ["Ayush Badoni","Batter","India",76,78,30,68,25,false,0.75],
+ ["Abdul Samad","Batter","India",74,76,25,66,24,false,0.5],
+ ["Shahbaz Ahmed","All-rounder","India",76,77,65,68,30,false,0.75],
+ ["Akash Singh","Fast Bowler","India",74,25,76,64,24,false,0.5],
+ ["Arjun Tendulkar","Fast Bowler","India",71,25,73,62,26,false,0.5],
+ ["Matthew Breetzke","Batter","South Africa",79,81,20,68,26,true,1],
+ ["Himmat Singh","Batter","India",68,70,20,60,22,false,0.3],
+ ["Manimaran Siddharth","Spinner","India",70,25,72,60,25,false,0.3],
+ // Punjab Kings
+ ["Shreyas Iyer","Batter","India",88,90,20,74,31,false,2],
+ ["Arshdeep Singh","Fast Bowler","India",83,25,86,70,27,false,2],
+ ["Yuzvendra Chahal","Spinner","India",86,25,88,68,35,false,2],
+ ["Marcus Stoinis","All-rounder","Australia",82,82,70,74,36,true,1.5],
+ ["Marco Jansen","All-rounder","South Africa",83,74,82,74,25,true,1.5],
+ ["Prabhsimran Singh","Wicketkeeper","India",78,80,20,68,25,false,1],
+ ["Priyansh Arya","Batter","India",76,78,20,65,23,false,0.75],
+ ["Nehal Wadhera","Batter","India",78,80,20,67,25,false,1],
+ ["Shashank Singh","All-rounder","India",78,79,55,68,33,false,0.75],
+ ["Lockie Ferguson","Fast Bowler","New Zealand",83,25,85,68,34,true,1.5],
+ ["Xavier Bartlett","Fast Bowler","Australia",76,25,78,64,27,true,0.75],
+ ["Musheer Khan","All-rounder","India",72,73,60,64,20,false,0.5],
+ ["Vishnu Vinod","Wicketkeeper","India",68,70,20,62,30,false,0.3],
+ ["Azmatullah Omarzai","All-rounder","Afghanistan",80,78,76,72,25,true,1],
+ ["Harpreet Brar","Spinner","India",74,40,76,64,28,false,0.5],
+ // Rajasthan Royals
+ ["Yashasvi Jaiswal","Batter","India",89,91,20,74,24,false,2],
+ ["Ravindra Jadeja","All-rounder","India",94,80,88,90,37,false,2],
+ ["Sam Curran","All-rounder","England",83,78,80,74,27,true,2],
+ ["Riyan Parag","All-rounder","India",80,82,60,72,24,false,1],
+ ["Dhruv Jurel","Wicketkeeper","India",82,83,20,72,25,false,1.5],
+ ["Shimron Hetmyer","Batter","West Indies",82,84,20,70,29,true,1.5],
+ ["Vaibhav Suryavanshi","Batter","India",79,82,20,64,15,false,1],
+ ["Jofra Archer","Fast Bowler","England",89,30,91,74,31,true,2],
+ ["Ravi Bishnoi","Spinner","India",84,25,86,68,25,false,2],
+ ["Tushar Deshpande","Fast Bowler","India",74,25,76,64,30,false,0.5],
+ ["Fazalhaq Farooqi","Fast Bowler","Afghanistan",81,25,83,66,25,true,1],
+ ["Kwena Maphaka","Fast Bowler","South Africa",76,20,79,64,19,true,0.75],
+ ["Adam Milne","Fast Bowler","New Zealand",78,25,80,66,34,true,1],
+ ["Kuldeep Sen","Fast Bowler","India",75,25,77,64,28,false,0.5],
+ ["Shubham Dubey","Batter","India",74,76,20,64,27,false,0.5]
+];
+
+var FIRST_NAMES = {
+ "India":["Rohan","Karan","Vikram","Aditya","Manish","Rajat","Deepak","Nikhil","Arjun","Amit","Sahil","Kartik","Yash","Pranav","Anirudh"],
+ "Australia":["Josh","Marcus","Nathan","Cameron","Liam","Ben","Ryan","Jake","Ashton","Mitch"],
+ "England":["Jos","Sam","Harry","Ollie","Reece","Liam","Tom","Jack","Dan","Luke"],
+ "South Africa":["Anrich","Wayne","David","Reeza","Lungi","Marco","Ryan","Keshav","Tristan"],
+ "New Zealand":["Finn","Devon","Daryl","Kane","Lockie","Mitchell","Tom","Will"],
+ "West Indies":["Shimron","Romario","Akeal","Alzarri","Jason","Rovman","Brandon"],
+ "Afghanistan":["Rashid","Mujeeb","Naveen","Fazalhaq","Azmatullah","Gulbadin"],
+ "Sri Lanka":["Wanindu","Dasun","Pathum","Charith","Maheesh"]
+};
+var LAST_NAMES = {
+ "India":["Sharma","Verma","Yadav","Chauhan","Reddy","Nair","Mishra","Choudhary","Iyer","Rathore","Bhatt","Malhotra","Menon"],
+ "Australia":["Hazlewood","Green","Ellis","Short","Stanlake","Behrendorff","Owen","Fraser-McGurk".split("-")[0]],
+ "England":["Curran","Duckett","Brook","Bethell","Topley","Atkinson","Mahmood"],
+ "South Africa":["Jansen","Coetzee","Hendricks","Breetzke","Stubbs","Ngidi"],
+ "New Zealand":["Allen","Conway","Phillips","Ravindra","Santner","Ferguson"],
+ "West Indies":["Hetmyer","Shepherd","Hosein","Mayers","Holder"],
+ "Afghanistan":["Khan","Zadran","Omarzai","Stanikzai"],
+ "Sri Lanka":["Hasaranga","Shanaka","Nissanka","Karunaratne"]
+};
+var NATIONS = Object.keys(FIRST_NAMES);
+
+function rand(min,max){return Math.random()*(max-min)+min;}
+function ri(min,max){return Math.floor(rand(min,max+1));}
+function pick(arr){return arr[ri(0,arr.length-1)];}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function uid(){return "p"+(_idc++)+"_"+Math.random().toString(36).slice(2,7);}
+var _idc=1;
+
+function fairValueForRating(rating){
+  if(rating>=92) return rand(14,22);
+  if(rating>=86) return rand(7,14);
+  if(rating>=78) return rand(3,7);
+  if(rating>=68) return rand(1,3);
+  return rand(0.2,1);
+}
+
+function makeGeneratedPlayer(){
+  var nation = pick(NATIONS);
+  var overseasNation = nation!=="India";
+  var role = pick(ROLES);
+  var bat, bowl, field, rating;
+  var base = ri(55,84);
+  if(role==="Batter"){bat=clamp(base+ri(0,10),50,95);bowl=ri(10,30);}
+  else if(role==="Wicketkeeper"){bat=clamp(base+ri(0,8),50,93);bowl=ri(10,25);}
+  else if(role==="All-rounder"){bat=clamp(base-ri(0,8),45,88);bowl=clamp(base-ri(0,8),45,88);}
+  else if(role==="Fast Bowler"){bowl=clamp(base+ri(0,10),50,95);bat=ri(15,35);}
+  else {bowl=clamp(base+ri(0,10),50,93);bat=ri(15,35);}
+  field=ri(60,88);
+  rating=Math.round(role==="All-rounder" ? (bat*0.5+bowl*0.5) : (role==="Batter"||role==="Wicketkeeper" ? bat*0.82+field*0.18 : bowl*0.82+field*0.18));
+  rating = clamp(rating,52,93);
+  var name = pick(FIRST_NAMES[nation])+" "+pick(LAST_NAMES[nation]);
+  var age = ri(19,38);
+  var basePrice = rating>=85?2: (rating>=75?1: (rating>=60?0.5:0.3));
+  return {
+    id:uid(), name:name, role:role, nationality:nation, overseas:overseasNation,
+    rating:rating, batting:bat, bowling:bowl, fielding:field, age:age, basePrice:basePrice
+  };
+}
+
+function buildInitialPlayerPool(){
+  var seen = {};
+  var list = [];
+  CURATED_PLAYERS.forEach(function(p){
+    if(seen[p[0]]) return; // guard against any accidental duplicate curated entries
+    seen[p[0]] = 1;
+    list.push({
+      id:uid(), name:p[0], role:p[1], nationality:p[2], rating:p[3],
+      batting:p[4], bowling:p[5], fielding:p[6], age:p[7], overseas:p[8], basePrice:p[9]
+    });
+  });
+  // The pool is the real 2026 IPL rosters above — no fictional filler players are added.
+  return list;
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+var S = {
+  screen:"home",
+  hasResumableSave:false,
+  settings:{
+    purse:100, increment:0.5, maxSquad:18, minSquad:15, maxOverseas:8,
+    numTeams:10, aiDifficulty:"Normal", speed:"Normal", autoBidUserOn:false, autoBidStrategy:"Balanced"
+  },
+  playerPool: buildInitialPlayerPool(),
+  teams:[],
+  userTeamId:null,
+  humanTeamIds:[],
+  activeSeatId:null,
+  squadViewTeamId:null,
+  queue:[],
+  qIndex:-1,
+  currentPlayer:null,
+  currentBid:0,
+  currentBidder:null,
+  bidHistory:[],
+  passedThisRound:{},
+  feed:[],
+  soldList:[],
+  unsoldList:[],
+  paused:false,
+  autoAuction:false,
+  timerFull:8,
+  timerValue:8,
+  flash:null, // {type:'sold'/'unsold', team, price}
+  tickHandle:null,
+  flashHandle:null,
+  auctionStartedAt:null,
+  savedHistoryList:[],
+  historyLoaded:false,
+  squadFilterRole:"All",
+  playerSearchQuery:"",
+  playerSortKey:"rating",
+  customTeamDraft:{name:"",short:"",color:"#e2b04a",logoUrl:null},
+  managementTeamId:null,
+  confirmModal:null, // {title, message, onConfirm}
+  calledThresholds:{},
+  soundOn:true,
+  pendingWishlist:[],
+  wishlistSearchQuery:""
+};
+
+var SPEED_MAP = {"Chill":12,"Normal":8,"Fast":4};
+
+/* =========================================================
+   SOUND (Web Audio — no external files, always safe to call)
+   ========================================================= */
+function ensureAudioCtx(){
+  if(window._audioCtx) return window._audioCtx;
+  try{ window._audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ window._audioCtx = null; }
+  return window._audioCtx;
+}
+function playTone(freq, dur, type, vol){
+  if(!S.soundOn) return;
+  var ctx = ensureAudioCtx();
+  if(!ctx) return;
+  try{
+    var osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.type = type||"sine"; osc.frequency.value = freq;
+    gain.gain.value = vol==null?0.05:vol;
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + (dur||0.15));
+  }catch(e){}
+}
+function playTick(){ playTone(880,0.05,"square",0.03); }
+function playBidBlip(){ playTone(660,0.07,"sine",0.045); }
+function playSoldChime(){
+  playTone(523,0.12,"triangle",0.06);
+  setTimeout(function(){ playTone(659,0.12,"triangle",0.06); }, 110);
+  setTimeout(function(){ playTone(784,0.2,"triangle",0.07); }, 220);
+}
+function playUnsoldBuzz(){ playTone(150,0.35,"sawtooth",0.045); }
+
+/* =========================================================
+   PERSISTENCE (window.storage)
+   ========================================================= */
+function hasStorage(){ return typeof window!=="undefined" && window.storage; }
+
+function serializeState(){
+  return JSON.stringify({
+    settings:S.settings, teams:S.teams, userTeamId:S.userTeamId,
+    humanTeamIds:S.humanTeamIds, activeSeatId:S.activeSeatId, squadViewTeamId:S.squadViewTeamId,
+    queue:S.queue.map(function(p){return p.id;}),
+    qIndex:S.qIndex, currentPlayer:S.currentPlayer, currentBid:S.currentBid,
+    currentBidder:S.currentBidder, bidHistory:S.bidHistory, feed:S.feed.slice(-60),
+    soldList:S.soldList, unsoldList:S.unsoldList, playerPool:S.playerPool,
+    savedAt:Date.now()
+  });
+}
+
+function saveActiveAuction(){
+  if(!hasStorage()) return;
+  try{
+    window.storage.set("ipl_active_auction", serializeState(), false).catch(function(){});
+  }catch(e){}
+}
+
+function clearActiveAuction(){
+  if(!hasStorage()) return;
+  try{ window.storage.delete("ipl_active_auction", false).catch(function(){}); }catch(e){}
+}
+
+function loadActiveAuctionCheck(){
+  if(!hasStorage()){ render(); return; }
+  window.storage.get("ipl_active_auction", false).then(function(res){
+    S.hasResumableSave = !!(res && res.value);
+    render();
+  }).catch(function(){ render(); });
+}
+
+function resumeAuction(){
+  if(!hasStorage()) return;
+  window.storage.get("ipl_active_auction", false).then(function(res){
+    if(!res || !res.value) return;
+    var d;
+    try{ d = JSON.parse(res.value); }catch(e){ return; }
+    S.settings = d.settings; S.teams = d.teams; S.userTeamId = d.userTeamId;
+    S.humanTeamIds = d.humanTeamIds || (S.teams.filter(function(t){return t.isUser;}).map(function(t){return t.id;}));
+    S.activeSeatId = d.activeSeatId || S.humanTeamIds[0] || S.userTeamId;
+    S.squadViewTeamId = d.squadViewTeamId || S.userTeamId;
+    S.playerPool = d.playerPool || S.playerPool;
+    var byId = {}; S.playerPool.forEach(function(p){byId[p.id]=p;});
+    S.queue = (d.queue||[]).map(function(id){return byId[id];}).filter(Boolean);
+    S.qIndex = d.qIndex; S.currentPlayer = d.currentPlayer; S.currentBid = d.currentBid;
+    S.currentBidder = d.currentBidder; S.bidHistory = d.bidHistory||[];
+    S.feed = d.feed||[]; S.soldList = d.soldList||[]; S.unsoldList = d.unsoldList||[];
+    S.timerFull = SPEED_MAP[S.settings.speed]||8; S.timerValue = S.timerFull;
+    S.passedThisRound = {};
+    S.screen = "auction";
+    render();
+    startTicking();
+  }).catch(function(){});
+}
+
+function loadHistoryList(cb){
+  if(!hasStorage()){ cb([]); return; }
+  window.storage.get("ipl_history_list", false).then(function(res){
+    if(!res || !res.value){ cb([]); return; }
+    try{ cb(JSON.parse(res.value)); }catch(e){ cb([]); }
+  }).catch(function(){ cb([]); });
+}
+
+function saveHistoryList(list){
+  if(!hasStorage()) return;
+  try{ window.storage.set("ipl_history_list", JSON.stringify(list), false).catch(function(){}); }catch(e){}
+}
+
+function pushHistoryEntry(entry){
+  loadHistoryList(function(list){
+    list.unshift(entry);
+    if(list.length>40) list = list.slice(0,40);
+    saveHistoryList(list);
+    S.savedHistoryList = list;
+  });
+}
+
+/* =========================================================
+   TEAM / AUCTION SETUP
+   ========================================================= */
+function buildTeams(picks, numTeams, startingPurse){
+  var templates = DEFAULT_TEAM_TEMPLATES.slice(0, Math.max(2,Math.min(10,numTeams)));
+  var teams = templates.map(function(t,i){
+    return {
+      id:"team_"+i, name:t.name, short:t.short, color:t.color,
+      isUser:false, purse:startingPurse, squad:[], personality:pick(AI_PERSONALITIES), wishlist:[]
+    };
+  });
+  picks.forEach(function(p){
+    if(p.custom){
+      var freeIdx = -1;
+      for(var i=0;i<teams.length;i++){ if(!teams[i].isUser){ freeIdx=i; break; } }
+      var newTeam = {
+        id: freeIdx>=0 ? teams[freeIdx].id : "team_"+teams.length,
+        name:p.name, short:p.short||p.name.slice(0,3).toUpperCase(), color:p.color||"#e2b04a",
+        logoUrl:p.logoUrl||null,
+        isUser:true, purse:startingPurse, squad:[], personality:"Friend", wishlist:[]
+      };
+      if(freeIdx>=0) teams[freeIdx] = newTeam; else teams.push(newTeam);
+    } else {
+      for(var j=0;j<teams.length;j++){
+        if(teams[j].name===p.name){ teams[j].isUser=true; teams[j].personality="Friend"; break; }
+      }
+    }
+  });
+  if(!teams.some(function(t){return t.isUser;})){ teams[0].isUser=true; teams[0].personality="Friend"; }
+  return teams;
+}
+
+function shuffledQueue(pool){
+  var arr = pool.slice();
+  for(var i=arr.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+  }
+  return arr;
+}
+
+function beginAuction(picks){
+  var st = S.settings;
+  S.teams = buildTeams(picks, st.numTeams, st.purse);
+  S.humanTeamIds = S.teams.filter(function(t){return t.isUser;}).map(function(t){return t.id;});
+  S.userTeamId = S.humanTeamIds[0];
+  S.activeSeatId = S.userTeamId;
+  S.squadViewTeamId = S.userTeamId;
+  var primary = S.teams.filter(function(t){return t.id===S.userTeamId;})[0];
+  if(primary) primary.wishlist = S.pendingWishlist.slice();
+  S.queue = shuffledQueue(S.playerPool);
+  S.qIndex = -1;
+  S.soldList = []; S.unsoldList = []; S.feed = [];
+  S.timerFull = SPEED_MAP[st.speed] || 8;
+  S.auctionStartedAt = Date.now();
+  S.screen = "auction";
+  advanceToNextPlayer();
+  render();
+  startTicking();
+}
+
+function advanceToNextPlayer(){
+  S.qIndex++;
+  S.flash = null;
+  if(S.qIndex >= S.queue.length){
+    finishAuction();
+    return;
+  }
+  S.currentPlayer = S.queue[S.qIndex];
+  S.currentBid = S.currentPlayer.basePrice;
+  S.currentBidder = null;
+  S.bidHistory = [];
+  S.passedThisRound = {};
+  S.timerValue = S.timerFull;
+  S.calledThresholds = {};
+  pushFeed("Entering the auction: "+S.currentPlayer.name+" — base price ₹"+fmt(S.currentPlayer.basePrice)+" Cr", "");
+}
+
+function pushFeed(text, cls){
+  S.feed.push({text:text, cls:cls||"", t:Date.now()});
+  if(S.feed.length>200) S.feed = S.feed.slice(-150);
+}
+
+function fmt(n){
+  if(Math.abs(n - Math.round(n)) < 0.001) return String(Math.round(n));
+  return n.toFixed(2).replace(/0$/,"").replace(/\.$/,"");
+}
+
+/* ---- squad legality checks ---- */
+function overseasCount(team){ return team.squad.filter(function(p){return p.overseas;}).length; }
+function canAfford(team, amount){ return team.purse >= amount - 0.0001; }
+function squadFull(team){ return team.squad.length >= S.settings.maxSquad; }
+function canBidOnPlayer(team, player, amount){
+  if(squadFull(team)) return false;
+  if(!canAfford(team, amount)) return false;
+  if(player.overseas && overseasCount(team) >= S.settings.maxOverseas) return false;
+  return true;
+}
+
+/* =========================================================
+   AI BIDDING ENGINE
+   ========================================================= */
+function roleNeedScore(team, role){
+  var count = team.squad.filter(function(p){return p.role===role;}).length;
+  var idealCount = IDEAL_ROLE_FRACTION[role] * S.settings.maxSquad;
+  if(idealCount<=0) return 0.3;
+  var ratio = count/idealCount;
+  return clamp(1.4 - ratio, 0, 1.4);
+}
+
+function difficultyNoise(){
+  var d = S.settings.aiDifficulty;
+  if(d==="Easy") return 0.42;
+  if(d==="Hard") return 0.08;
+  return 0.22;
+}
+
+function reserveBudget(team){
+  var slotsStillNeeded = Math.max(0, S.settings.minSquad - team.squad.length - 1);
+  return slotsStillNeeded * 0.25; // keep enough pocket change to fill out the minimum squad
+}
+
+function personalityCeiling(team, player){
+  var mult = 1.6;
+  if(team.personality==="Aggressive") mult += 0.35;
+  if(team.personality==="Conservative") mult -= 0.5;
+  if(team.personality==="Value Buyer") mult -= 0.35;
+  if(team.personality==="Superstar Hunter") mult += (player.rating>=87 ? 0.8 : -0.6);
+  return Math.max(1.05, mult);
+}
+
+function aiDesire(team, player, currentBid, nextAmount){
+  if(!canBidOnPlayer(team, player, nextAmount)) return -1;
+  if(nextAmount > team.purse - reserveBudget(team)) return -1;
+  var fair = fairValueForRating(player.rating);
+  var ceiling = Math.min(fair * personalityCeiling(team, player), 35);
+  if(nextAmount > ceiling) return -1;
+
+  var need = roleNeedScore(team, player.role);
+  var ratingFactor = player.rating/100;
+  var ratio = nextAmount / Math.max(fair, 0.2); // 1 = paying fair value, >1 = overpaying
+  var priceGap = ratio <= 1 ? (1 - ratio) : -((ratio - 1) * 1.6);
+  var purseFrac = team.purse / (S.settings.purse||100);
+  var slotsLeft = S.settings.maxSquad - team.squad.length;
+  var urgency = clamp((S.queue.length - S.qIndex) > 0 ? slotsLeft / Math.max(1,(S.queue.length-S.qIndex)*0.55) : 1, 0, 1.6);
+
+  var w = {need:0.34, rating:0.22, price:0.28, purse:0.08, urgency:0.08};
+  var score = need*w.need + ratingFactor*w.rating + clamp(priceGap,-1.6,1)*w.price + purseFrac*w.purse + urgency*w.urgency;
+
+  switch(team.personality){
+    case "Conservative":
+      score = score*0.75 + clamp(priceGap,-1.6,1)*0.25;
+      break;
+    case "Aggressive":
+      score += 0.18;
+      if(need>0.6) score += 0.15;
+      break;
+    case "Superstar Hunter":
+      if(player.rating>=87) score += 0.45; else score -= 0.3;
+      break;
+    case "Value Buyer":
+      score += clamp(priceGap,-1.6,1)*0.35;
+      break;
+    default: // Balanced
+      break;
+  }
+  score += (Math.random()-0.5)*difficultyNoise()*2;
+  return score;
+}
+
+function aiConsiderBids(){
+  if(!S.currentPlayer) return;
+  var candidates = S.teams.filter(function(t){ return !t.isUser && !S.passedThisRound[t.id] && t.id!==S.currentBidder; });
+  var best = null, bestScore = -Infinity;
+  candidates.forEach(function(team){
+    var jump = (team.personality==="Aggressive"||team.personality==="Superstar Hunter") && Math.random()<0.18 ? 2 : 1;
+    var nextAmount = S.currentBid + S.settings.increment*jump;
+    var d = aiDesire(team, S.currentPlayer, S.currentBid, nextAmount);
+    if(d > bestScore){ bestScore = d; best = {team:team, nextAmount:nextAmount}; }
+  });
+  var threshold = 0.34;
+  if(best && bestScore > threshold){
+    var chance = clamp(0.32 + bestScore*0.28, 0.1, 0.85);
+    if(Math.random() < chance){
+      doBid(best.team, best.nextAmount);
+      return;
+    }
+  }
+  candidates.forEach(function(team){
+    if(team===((best||{}).team)) return;
+    var nextAmount = S.currentBid + S.settings.increment;
+    if(!canBidOnPlayer(team, S.currentPlayer, nextAmount)){
+      if(nextAmount > team.purse || (S.currentPlayer.overseas && overseasCount(team)>=S.settings.maxOverseas) || squadFull(team)){
+        S.passedThisRound[team.id] = true;
+      }
+    }
+  });
+}
+
+function doBid(team, amount){
+  amount = Math.round(amount*100)/100;
+  S.currentBid = amount;
+  S.currentBidder = team.id;
+  S.bidHistory.push({teamId:team.id, amount:amount});
+  S.timerValue = S.timerFull;
+  S.calledThresholds = {};
+  var soloYou = team.isUser && S.humanTeamIds.length<=1;
+  var label = soloYou ? "You" : team.name;
+  pushFeed(label+" bid ₹"+fmt(amount)+" Cr", team.isUser?"you":"");
+  if(team.isUser) playBidBlip();
+}
+
+/* =========================================================
+   TICK LOOP
+   ========================================================= */
+function startTicking(){
+  stopTicking();
+  S.tickHandle = setInterval(tick, 1000);
+}
+function stopTicking(){
+  if(S.tickHandle){ clearInterval(S.tickHandle); S.tickHandle=null; }
+}
+function tick(){
+  if(S.screen!=="auction" || S.paused || !S.currentPlayer || S.flash) return;
+  S.timerValue--;
+  if(S.timerValue <= 0){
+    finalizeSale();
+  } else {
+    if(S.currentBidder){
+      if(S.timerValue===3 && !S.calledThresholds.once){
+        pushFeed("Going once...", "callout"); S.calledThresholds.once=true;
+      } else if(S.timerValue===1 && !S.calledThresholds.twice){
+        pushFeed("Going twice...", "callout"); S.calledThresholds.twice=true;
+      }
+    }
+    if(S.timerValue<=3) playTick();
+    aiConsiderBids();
+    if(S.currentBidder !== S.userTeamId) maybeAutoBidUser();
+  }
+  render();
+}
+
+function finalizeSale(){
+  stopTicking();
+  var player = S.currentPlayer;
+  if(S.currentBidder){
+    var team = S.teams.filter(function(t){return t.id===S.currentBidder;})[0];
+    team.purse = Math.round((team.purse - S.currentBid)*100)/100;
+    team.squad.push(Object.assign({}, player, {soldPrice:S.currentBid}));
+    S.soldList.push({player:player, teamId:team.id, price:S.currentBid});
+    pushFeed("SOLD — "+player.name+" to "+team.name+" for ₹"+fmt(S.currentBid)+" Cr", "sold");
+    S.flash = {type:"sold", teamName:team.name, price:S.currentBid};
+    playSoldChime();
+  } else {
+    S.unsoldList.push(player);
+    pushFeed(player.name+" goes UNSOLD", "unsold");
+    S.flash = {type:"unsold"};
+    playUnsoldBuzz();
+  }
+  saveActiveAuction();
+  render();
+  S.flashHandle = setTimeout(function(){
+    S.flash = null;
+    if(!S.paused){
+      advanceToNextPlayer();
+      render();
+      if(S.screen==="auction") startTicking();
+    }
+  }, 1600);
+}
+
+function finishAuction(){
+  stopTicking();
+  S.currentPlayer = null;
+  S.screen = "results";
+  clearActiveAuction();
+  var results = computeResults();
+  pushHistoryEntry({
+    id:"h_"+Date.now(), name:"Auction — "+new Date().toLocaleDateString(),
+    date:Date.now(),
+    results: results.map(function(r){return {name:r.team.name, score:r.score, purseLeft:r.team.purse};}),
+    stats: computeStats()
+  });
+  render();
+}
+
+/* =========================================================
+   SQUAD ANALYSIS / RESULTS
+   ========================================================= */
+function computeBalance(team){
+  var counts = {}; ROLES.forEach(function(r){counts[r]=0;});
+  team.squad.forEach(function(p){ counts[p.role] = (counts[p.role]||0)+1; });
+  var n = team.squad.length || 1;
+  var diffSum = 0;
+  ROLES.forEach(function(r){
+    var actualFrac = counts[r]/n;
+    diffSum += Math.abs(actualFrac - IDEAL_ROLE_FRACTION[r]);
+  });
+  var roleScore = clamp(100 - diffSum*90, 0, 100);
+  var avgRating = team.squad.length ? team.squad.reduce(function(a,p){return a+p.rating;},0)/team.squad.length : 0;
+  var ratingScore = clamp((avgRating-45)/45*100, 0, 100);
+  var sizeOk = team.squad.length >= S.settings.minSquad;
+  var score = Math.round(roleScore*0.55 + ratingScore*0.45) - (sizeOk?0:12);
+  return {score:clamp(score,0,100), counts:counts, avgRating:Math.round(avgRating), roleScore:Math.round(roleScore)};
+}
+
+function weakestRole(counts, n){
+  var worst=null, worstGap=-Infinity;
+  ROLES.forEach(function(r){
+    var actual = (counts[r]||0)/(n||1);
+    var gap = IDEAL_ROLE_FRACTION[r]-actual;
+    if(gap>worstGap){worstGap=gap; worst=r;}
+  });
+  return worst;
+}
+function strongestRole(counts, n){
+  var best=null, bestGap=-Infinity;
+  ROLES.forEach(function(r){
+    var actual = (counts[r]||0)/(n||1);
+    var gap = actual-IDEAL_ROLE_FRACTION[r];
+    if(gap>bestGap){bestGap=gap; best=r;}
+  });
+  return best;
+}
+
+function generatePlayingXI(team){
+  var pool = team.squad.slice().sort(function(a,b){return b.rating-a.rating;});
+  var slots = ["Batter","Batter","Batter","Batter","Wicketkeeper","All-rounder","All-rounder","Spinner","Fast Bowler","Fast Bowler","Fast Bowler"];
+  var used = {}; var xi = []; var overseasUsed = 0;
+  function takeBest(role, allowOverseasLimit){
+    for(var i=0;i<pool.length;i++){
+      var p = pool[i];
+      if(used[p.id]) continue;
+      if(role && p.role!==role) continue;
+      if(p.overseas && overseasUsed>=4) continue;
+      used[p.id]=true;
+      if(p.overseas) overseasUsed++;
+      return p;
+    }
+    return null;
+  }
+  slots.forEach(function(role){
+    var p = takeBest(role);
+    if(!p) p = takeBest(null);
+    if(p) xi.push(Object.assign({}, p, {slot:role}));
+  });
+  var bench = pool.filter(function(p){return !used[p.id];});
+  return {xi:xi, bench:bench};
+}
+
+function computeResults(){
+  var results = S.teams.map(function(team){
+    var bal = computeBalance(team);
+    var xiData = generatePlayingXI(team);
+    var xiAvg = xiData.xi.length ? xiData.xi.reduce(function(a,p){return a+p.rating;},0)/xiData.xi.length : 0;
+    var score = Math.round(clamp(xiAvg,0,100)*0.65 + bal.score*0.35);
+    return {team:team, score:score, balance:bal, xi:xiData.xi, bench:xiData.bench};
+  });
+  results.sort(function(a,b){return b.score-a.score;});
+  return results;
+}
+
+function computeStats(){
+  var stats = {};
+  if(S.soldList.length){
+    var mostExp = S.soldList.slice().sort(function(a,b){return b.price-a.price;})[0];
+    stats.mostExpensive = mostExp.player.name+" — ₹"+fmt(mostExp.price)+" Cr";
+    var bargain = S.soldList.slice().sort(function(a,b){
+      return (b.player.rating/(b.price||0.1)) - (a.player.rating/(a.price||0.1));
+    })[0];
+    stats.biggestBargain = bargain.player.name+" — ₹"+fmt(bargain.price)+" Cr (rating "+bargain.player.rating+")";
+    var surprise = S.soldList.slice().sort(function(a,b){
+      return (b.price - b.player.basePrice) - (a.price - a.player.basePrice);
+    })[0];
+    stats.surprise = surprise.player.name+" (base ₹"+fmt(surprise.player.basePrice)+" → ₹"+fmt(surprise.price)+" Cr)";
+  }
+  var byTeamCount = S.teams.slice().sort(function(a,b){return b.squad.length-a.squad.length;})[0];
+  stats.mostActive = byTeamCount ? byTeamCount.name+" — "+byTeamCount.squad.length+" players" : "—";
+  var byPurse = S.teams.slice().sort(function(a,b){return b.purse-a.purse;})[0];
+  stats.mostPurseLeft = byPurse ? byPurse.name+" — ₹"+fmt(byPurse.purse)+" Cr" : "—";
+  function avgRoleRating(team, roles){
+    var arr = team.squad.filter(function(p){return roles.indexOf(p.role)>=0;});
+    if(!arr.length) return 0;
+    return arr.reduce(function(a,p){return a+ (roles.indexOf("Batter")>=0?p.batting:p.bowling);},0)/arr.length;
+  }
+  var bestBat = S.teams.slice().sort(function(a,b){return avgRoleRating(b,["Batter","Wicketkeeper"])-avgRoleRating(a,["Batter","Wicketkeeper"]);})[0];
+  var bestBowl = S.teams.slice().sort(function(a,b){return avgRoleRating(b,["Fast Bowler","Spinner"])-avgRoleRating(a,["Fast Bowler","Spinner"]);})[0];
+  stats.strongestBatting = bestBat ? bestBat.name : "—";
+  stats.strongestBowling = bestBowl ? bestBowl.name : "—";
+  var mostBalanced = S.teams.slice().sort(function(a,b){return computeBalance(b).score-computeBalance(a).score;})[0];
+  stats.mostBalanced = mostBalanced ? mostBalanced.name+" ("+computeBalance(mostBalanced).score+"/100)" : "—";
+  stats.unsoldCount = S.unsoldList.length;
+  return stats;
+}
+
+/* =========================================================
+   USER ACTIONS
+   ========================================================= */
+function userTeam(){ return S.teams.filter(function(t){return t.id===S.userTeamId;})[0]; }
+function humanTeams(){ return S.teams.filter(function(t){return t.isUser;}); }
+function activeSeat(){
+  var id = S.activeSeatId || S.userTeamId;
+  return S.teams.filter(function(t){return t.id===id;})[0];
+}
+window.setActiveSeat = function(id){ S.activeSeatId = id; render(); };
+
+window.userBid = function(teamId, mult){
+  mult = mult || 1;
+  var team = S.teams.filter(function(t){return t.id===(teamId||S.activeSeatId||S.userTeamId);})[0];
+  if(!team || !S.currentPlayer || S.flash) return;
+  var nextAmount = Math.round((S.currentBid + S.settings.increment*mult)*100)/100;
+  if(!canBidOnPlayer(team, S.currentPlayer, nextAmount)){
+    pushFeed(team.name+" can't place that bid right now (purse, squad size, or overseas limit).", "unsold");
+    render();
+    return;
+  }
+  doBid(team, nextAmount);
+  render();
+};
+window.userPass = function(teamId){
+  var team = S.teams.filter(function(t){return t.id===(teamId||S.activeSeatId||S.userTeamId);})[0];
+  if(!team) return;
+  S.passedThisRound[team.id] = true;
+  pushFeed(team.name+" passed on "+ (S.currentPlayer? S.currentPlayer.name : "this player"), "you");
+  render();
+};
+window.togglePause = function(){
+  S.paused = !S.paused;
+  if(S.paused){ stopTicking(); pushFeed("Auction paused.", ""); }
+  else { pushFeed("Auction resumed.", ""); startTicking(); }
+  render();
+};
+window.toggleAutoAuction = function(){
+  S.autoAuction = !S.autoAuction;
+  render();
+};
+window.toggleSound = function(){
+  S.soundOn = !S.soundOn;
+  if(S.soundOn) ensureAudioCtx();
+  render();
+};
+window.toggleAutoBidUser = function(){
+  S.settings.autoBidUserOn = !S.settings.autoBidUserOn;
+  render();
+};
+window.setAutoBidStrategy = function(v){ S.settings.autoBidStrategy = v; render(); };
+
+// auto-bid for user's team (runs inside tick via separate check)
+function maybeAutoBidUser(){
+  if(!S.settings.autoBidUserOn) return;
+  var team = userTeam();
+  if(!team || S.passedThisRound[team.id]) return;
+  var nextAmount = S.currentBid + S.settings.increment;
+  if(!canBidOnPlayer(team, S.currentPlayer, nextAmount)) return;
+  var strat = S.settings.autoBidStrategy;
+  var fair = fairValueForRating(S.currentPlayer.rating);
+  var need = roleNeedScore(team, S.currentPlayer.role);
+  var willingness = 0.3;
+  if(strat==="Aggressive") willingness = 0.55;
+  if(strat==="Value") willingness = nextAmount < fair*0.85 ? 0.6 : 0.05;
+  if(strat==="Star Players Only") willingness = S.currentPlayer.rating>=86 ? 0.7 : 0.02;
+  if(strat==="Balanced") willingness = 0.28 + need*0.25;
+  if(Math.random() < willingness){ doBid(team, nextAmount); }
+}
+
+/* =========================================================
+   NAVIGATION HELPERS
+   ========================================================= */
+window.goScreen = function(name){
+  S.screen = name;
+  if(name==="history" && !S.historyLoaded){
+    loadHistoryList(function(list){ S.savedHistoryList=list; S.historyLoaded=true; render(); });
+  }
+  render();
+};
+window.goHome = function(){ S.screen="home"; render(); };
+
+window.confirmNewAuction = function(){
+  S.confirmModal = {
+    title:"Start a new auction?",
+    message:"This will discard your current auction progress. This can't be undone.",
+    onConfirm:function(){
+      stopTicking();
+      clearActiveAuction();
+      S.currentPlayer=null; S.teams=[]; S.soldList=[]; S.unsoldList=[]; S.feed=[];
+      S.confirmModal=null;
+      S.screen = "teamSelect";
+      render();
+    }
+  };
+  render();
+};
+window.dismissConfirm = function(){ S.confirmModal=null; render(); };
+window.runConfirm = function(){ if(S.confirmModal && S.confirmModal.onConfirm) S.confirmModal.onConfirm(); };
+
+/* =========================================================
+   TEAM SELECT / SETTINGS HANDLERS
+   ========================================================= */
+var _teamSelectPicks = []; // array of {custom:false,name} or {custom:true,name,short,color} — one per human player
+window.pickTeamTemplate = function(name){
+  var idx = -1;
+  for(var i=0;i<_teamSelectPicks.length;i++){ if(!_teamSelectPicks[i].custom && _teamSelectPicks[i].name===name){ idx=i; break; } }
+  if(idx>=0) _teamSelectPicks.splice(idx,1);
+  else _teamSelectPicks.push({custom:false, name:name});
+  render();
+};
+window.pickCustomTeam = function(){
+  var d = S.customTeamDraft;
+  if(!d.name.trim()) return;
+  _teamSelectPicks.push({custom:true, name:d.name.trim(), short:(d.short.trim() || d.name.trim().slice(0,3).toUpperCase()), color:d.color, logoUrl:d.logoUrl||null});
+  S.customTeamDraft = {name:"",short:"",color:"#e2b04a",logoUrl:null};
+  render();
+};
+window.removeTeamPick = function(idx){ _teamSelectPicks.splice(idx,1); render(); };
+window.updateCustomDraft = function(field, val){ S.customTeamDraft[field]=val; render(); };
+window.handleTeamLogoUpload = function(inputEl){
+  var file = inputEl.files && inputEl.files[0];
+  readFileAsDataUrl(file, function(dataUrl){
+    S.customTeamDraft.logoUrl = dataUrl;
+    render();
+  });
+};
+window.confirmTeamAndGoSettings = function(){
+  if(!_teamSelectPicks.length) return;
+  window._pendingPicks = _teamSelectPicks.slice();
+  S.screen = "settings";
+  render();
+};
+
+window.updateSetting = function(key, val){
+  if(["purse","increment","maxSquad","minSquad","maxOverseas","numTeams"].indexOf(key)>=0){
+    val = parseFloat(val);
+    if(isNaN(val)) return;
+  }
+  S.settings[key]=val;
+  render();
+};
+window.resetSettingsToDefault = function(){
+  S.settings = {purse:100, increment:0.5, maxSquad:18, minSquad:15, maxOverseas:8, numTeams:10, aiDifficulty:"Normal", speed:"Normal", autoBidUserOn:false, autoBidStrategy:"Balanced"};
+  render();
+};
+window.launchAuctionFromSettings = function(){
+  var picks = (window._pendingPicks && window._pendingPicks.length) ? window._pendingPicks : [{custom:false, name:DEFAULT_TEAM_TEMPLATES[0].name}];
+  beginAuction(picks);
+};
+
+/* =========================================================
+   CUSTOMIZATION HANDLERS
+   ========================================================= */
+window.addCustomPlayer = function(form){
+  var name = form.name.trim(); if(!name) return;
+  S.playerPool.push({
+    id:uid(), name:name, role:form.role, nationality:form.nationality||"India",
+    rating:clamp(parseInt(form.rating)||60,1,99), batting:clamp(parseInt(form.batting)||50,1,99),
+    bowling:clamp(parseInt(form.bowling)||50,1,99), fielding:clamp(parseInt(form.fielding)||50,1,99),
+    age:clamp(parseInt(form.age)||24,16,45), overseas: form.nationality!=="India", basePrice: parseFloat(form.basePrice)||0.5,
+    photoUrl: form.photoUrl||null
+  });
+  render();
+};
+window.removePlayer = function(id){
+  S.playerPool = S.playerPool.filter(function(p){return p.id!==id;});
+  render();
+};
+window.editPlayerField = function(id, field, val){
+  var p = S.playerPool.filter(function(pp){return pp.id===id;})[0];
+  if(!p) return;
+  if(["rating","batting","bowling","fielding","age"].indexOf(field)>=0) val = clamp(parseInt(val)||0,1,99);
+  if(field==="basePrice") val = Math.max(0.1, parseFloat(val)||0.5);
+  p[field]=val;
+};
+window.handlePlayerPhotoUpload = function(id, inputEl){
+  var file = inputEl.files && inputEl.files[0];
+  var p = S.playerPool.filter(function(pp){return pp.id===id;})[0];
+  if(!p) return;
+  readFileAsDataUrl(file, function(dataUrl){
+    if(dataUrl){ p.photoUrl = dataUrl; render(); }
+  });
+};
+
+/* =========================================================
+   RENDER: ROOT
+   ========================================================= */
+var root = document.getElementById("app");
+function render(){
+  var html = "";
+  html += renderTopbar();
+  switch(S.screen){
+    case "home": html += renderHome(); break;
+    case "teamSelect": html += renderTeamSelect(); break;
+    case "settings": html += renderSettings(); break;
+    case "auction": html += renderAuction(); break;
+    case "squad": html += renderSquad(); break;
+    case "management": html += renderManagement(); break;
+    case "results": html += renderResults(); break;
+    case "comparison": html += renderComparison(); break;
+    case "howToPlay": html += renderHowToPlay(); break;
+    case "history": html += renderHistory(); break;
+    case "customize": html += renderCustomize(); break;
+    default: html += renderHome();
+  }
+  if(S.confirmModal) html += renderConfirmModal();
+  root.innerHTML = html;
+  wireDynamicInputs();
+}
+
+function renderConfirmModal(){
+  var m = S.confirmModal;
+  return '<div style="position:fixed;inset:0;background:rgba(6,9,13,.72);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;">'+
+    '<div class="card" style="max-width:400px;padding:24px;">'+
+    '<h3 class="h-disp" style="margin:0 0 10px;font-size:22px;">'+esc(m.title)+'</h3>'+
+    '<p class="small" style="margin:0 0 20px;">'+esc(m.message)+'</p>'+
+    '<div style="display:flex;gap:10px;justify-content:flex-end;">'+
+    '<button class="btn btn-ghost btn-sm" onclick="dismissConfirm()">Cancel</button>'+
+    '<button class="btn btn-crimson btn-sm" onclick="runConfirm()">Confirm</button>'+
+    '</div></div></div>';
+}
+
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* =========================================================
+   ORIGINAL, GENERATED ARTWORK — player avatars & team crests
+   (No real photos or official logos are used anywhere in this
+   app; everything below is drawn from initials/colors.)
+   ========================================================= */
+var ROLE_GLYPH = {"Batter":"🏏","Wicketkeeper":"🧤","All-rounder":"⚡","Fast Bowler":"🔥","Spinner":"🌀"};
+var AVATAR_PALETTE = ["#c8483a","#e2b04a","#3f6e52","#3560c9","#7a4fae","#c96b2b","#2e8f8f","#a83f7a"];
+function initials(name){
+  var parts = String(name||"").trim().split(/\s+/);
+  if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+}
+function hashSeed(str){
+  var h=0; for(var i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))>>>0; } return h;
+}
+function playerAvatarHTML(p, size){
+  size = size||56;
+  if(p.photoUrl){
+    return '<img src="'+p.photoUrl+'" style="width:'+size+'px;height:'+size+'px;border-radius:'+Math.round(size*0.24)+'px;flex-shrink:0;object-fit:cover;border:1px solid var(--line-soft);" />';
+  }
+  var color = AVATAR_PALETTE[hashSeed(p.name)%AVATAR_PALETTE.length];
+  var glyph = ROLE_GLYPH[p.role]||"🏏";
+  var fs = Math.round(size*0.34);
+  return '<div style="width:'+size+'px;height:'+size+'px;border-radius:'+Math.round(size*0.24)+'px;flex-shrink:0;position:relative;'+
+    'background:linear-gradient(150deg,'+color+'cc,'+color+'55);border:1px solid '+color+';'+
+    'display:flex;align-items:center;justify-content:center;">'+
+    '<span style="font-family:var(--disp);font-weight:800;font-size:'+fs+'px;color:#fff;letter-spacing:0.5px;">'+esc(initials(p.name))+'</span>'+
+    '<span style="position:absolute;bottom:-4px;right:-4px;background:var(--bg-1);border:1px solid var(--line-soft);border-radius:50%;width:'+Math.round(size*0.34)+'px;height:'+Math.round(size*0.34)+'px;display:flex;align-items:center;justify-content:center;font-size:'+Math.round(size*0.18)+'px;">'+glyph+'</span>'+
+    '</div>';
+}
+function teamCrestHTML(team, size){
+  size = size||22;
+  if(team.logoUrl){
+    return '<img src="'+team.logoUrl+'" style="width:'+size+'px;height:'+size+'px;border-radius:'+Math.round(size*0.22)+'px;object-fit:cover;flex-shrink:0;vertical-align:middle;margin-right:6px;border:1px solid var(--line-soft);" />';
+  }
+  var color = team.color||"#e2b04a";
+  var short = (team.short||team.name||"?").slice(0,4).toUpperCase();
+  var fs = Math.max(7, Math.round(size*0.34));
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:'+size+'px;height:'+size+'px;'+
+    'border-radius:'+Math.round(size*0.28)+'px 0 '+Math.round(size*0.28)+'px 0;background:linear-gradient(150deg,'+color+',#0b1016);'+
+    'border:1px solid '+color+';color:#fff;font-family:var(--disp);font-weight:800;font-size:'+fs+'px;flex-shrink:0;vertical-align:middle;margin-right:6px;line-height:1;">'+
+    esc(short.slice(0,3))+'</span>';
+}
+function readFileAsDataUrl(file, cb){
+  if(!file){ cb(null); return; }
+  var reader = new FileReader();
+  reader.onload = function(){ cb(reader.result); };
+  reader.onerror = function(){ cb(null); };
+  reader.readAsDataURL(file);
+}
+var CONFETTI_COLORS = ["#e2b04a","#f0cf85","#79c79a","#c8483a","#e2685a","#8fb8e6"];
+function confettiHTML(){
+  var pieces = "";
+  for(var i=0;i<26;i++){
+    var left = (Math.random()*100).toFixed(1);
+    var color = CONFETTI_COLORS[i%CONFETTI_COLORS.length];
+    var delay = (Math.random()*0.35).toFixed(2);
+    var rot = Math.round(Math.random()*40-20);
+    pieces += '<div class="confetti-piece" style="left:'+left+'%;background:'+color+';animation-delay:'+delay+'s;transform:rotate('+rot+'deg);"></div>';
+  }
+  return pieces;
+}
+
+function renderTopbar(){
+  if(S.screen==="home") return "";
+  var items = [
+    ["home","Home"], ["auction","Live Auction"], ["squad","My Squad"], ["management","Teams"],
+    ["comparison","Compare"], ["history","History"], ["customize","Customize"], ["howToPlay","How to Play"]
+  ];
+  var links = items.map(function(it){
+    var active = S.screen===it[0] ? " active" : "";
+    var handler = it[0]==="home" ? "goHome()" : "goScreen('"+it[0]+"')";
+    return '<button class="'+active+'" onclick="'+handler+'">'+it[1]+'</button>';
+  }).join("");
+  return '<div class="topbar"><div class="brand"><span class="dot"></span>AUCTION NIGHT</div>'+
+    '<div class="navlinks">'+links+'</div></div>';
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  var resumeBanner = S.hasResumableSave ? (
+    '<div class="resume-banner"><div>'+
+    '<div style="font-weight:700;font-size:14.5px;">Unfinished auction found</div>'+
+    '<div class="tiny">Pick up right where you left off.</div></div>'+
+    '<button class="btn btn-gold btn-sm" onclick="resumeAuction()">Continue</button></div>'
+  ) : "";
+  return '<div class="home-hero">'+
+    resumeBanner+
+    '<div class="eyebrow-badge">A fan-made cricket auction simulation · not affiliated with any official league</div>'+
+    '<h1 class="home-title">AUCTION<br/><span>NIGHT</span></h1>'+
+    '<p class="home-sub">Build your squad. Outsmart the AI. Win the auction.</p>'+
+    '<div class="home-actions">'+
+    '<button class="btn btn-gold" onclick="goScreen(\'teamSelect\')">Start Auction</button>'+
+    '<button class="btn btn-ghost" onclick="goScreen(\'customize\')">Customize Auction</button>'+
+    '<button class="btn btn-ghost" onclick="goScreen(\'howToPlay\')">How to Play</button>'+
+    '</div>'+
+    '<p class="home-note">No login, no download. Play solo against the AI, or pick a franchise for each of your friends and pass the device around the table — everything runs and saves right here in your browser.</p>'+
+    '</div>';
+}
+
+/* ---------- TEAM SELECT ---------- */
+function isPicked(name){
+  for(var i=0;i<_teamSelectPicks.length;i++){ if(!_teamSelectPicks[i].custom && _teamSelectPicks[i].name===name) return true; }
+  return false;
+}
+function renderTeamSelect(){
+  var tiles = DEFAULT_TEAM_TEMPLATES.map(function(t){
+    var selected = isPicked(t.name) ? " selected" : "";
+    return '<button class="team-tile'+selected+'" onclick="pickTeamTemplate(\''+t.name.replace(/'/g,"\\'")+'\')">'+
+      teamCrestHTML({short:t.short,color:t.color}, 40)+
+      '<h3 style="margin-top:10px;">'+t.short+'</h3><div class="tiny">'+t.name+'</div>'+
+      (selected?'<div class="tiny" style="color:var(--gold);margin-top:6px;">✓ Playing</div>':'')+
+      '</button>';
+  }).join("");
+  var customList = _teamSelectPicks.map(function(p,idx){
+    if(!p.custom) return "";
+    return '<div class="team-row" style="margin-bottom:6px;"><span class="tname">'+teamCrestHTML({short:p.short,color:p.color,logoUrl:p.logoUrl},16)+esc(p.name)+'</span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="removeTeamPick('+idx+')">Remove</button></div>';
+  }).join("");
+  var logoPreview = S.customTeamDraft.logoUrl
+    ? teamCrestHTML({short:S.customTeamDraft.short,color:S.customTeamDraft.color,logoUrl:S.customTeamDraft.logoUrl}, 40)
+    : '';
+  var customBox = '<div class="card" style="padding:18px;margin-top:22px;max-width:420px;">'+
+    '<h3 class="h-disp" style="margin:0 0 12px;font-size:20px;">Create Custom Team</h3>'+
+    (customList ? '<div style="margin-bottom:12px;">'+customList+'</div>' : '')+
+    '<div style="display:flex;flex-direction:column;gap:10px;">'+
+    '<input type="text" placeholder="Team name" value="'+esc(S.customTeamDraft.name)+'" data-bind="customTeamDraft.name" />'+
+    '<div style="display:flex;gap:10px;">'+
+    '<input type="text" placeholder="Short code (e.g. ABC)" style="flex:1" value="'+esc(S.customTeamDraft.short)+'" data-bind="customTeamDraft.short" />'+
+    '<input type="color" value="'+S.customTeamDraft.color+'" data-bind="customTeamDraft.color" style="width:48px;height:38px;border-radius:8px;border:1px solid var(--line);background:none;padding:2px;" />'+
+    '</div>'+
+    '<label class="field">Upload your own logo (optional)<div style="display:flex;align-items:center;gap:10px;">'+
+    '<input type="file" accept="image/*" onchange="handleTeamLogoUpload(this)" style="flex:1;font-size:12.5px;" />'+logoPreview+'</div></label>'+
+    '<button class="btn btn-ghost btn-sm" onclick="pickCustomTeam()">Add this team</button>'+
+    '</div></div>';
+
+  var canContinue = _teamSelectPicks.length>0;
+  var countNote = _teamSelectPicks.length>1
+    ? _teamSelectPicks.length+" players selected — pass the device around the table when it's each team's turn to bid."
+    : "Selecting more than one franchise lets your friends each control their own team on this device.";
+  return '<div class="screen"><div class="screen-head">'+
+    '<h1 class="screen-title">Who\'s Playing?</h1>'+
+    '<p class="screen-desc">Select every franchise a human will control — playing solo? Just pick one. Playing with friends? Select one team per person, then share this screen at auction time. Every unselected franchise is run by the AI.</p>'+
+    '</div>'+
+    '<div class="team-grid">'+tiles+'</div>'+
+    customBox+
+    '<p class="small" style="margin-top:16px;">'+countNote+'</p>'+
+    '<div style="margin-top:16px;">'+
+    '<button class="btn btn-gold" '+(canContinue?"":"disabled")+' onclick="confirmTeamAndGoSettings()">Continue to Settings →</button>'+
+    '</div></div>';
+}
+
+/* ---------- SETTINGS ---------- */
+function renderSettings(){
+  var st = S.settings;
+  function numField(label, key, step){
+    return '<label class="field">'+label+'<input type="number" step="'+(step||1)+'" value="'+st[key]+'" data-bind="settings.'+key+'" /></label>';
+  }
+  function selectField(label, key, options){
+    var opts = options.map(function(o){return '<option value="'+o+'" '+(st[key]===o?"selected":"")+'>'+o+'</option>';}).join("");
+    return '<label class="field">'+label+'<select data-bind="settings.'+key+'">'+opts+'</select></label>';
+  }
+  var q = S.wishlistSearchQuery.toLowerCase();
+  var matches = q ? S.playerPool.filter(function(p){
+    return p.name.toLowerCase().indexOf(q)>=0 && S.pendingWishlist.indexOf(p.id)<0;
+  }).slice(0,6) : [];
+  var matchRows = matches.map(function(p){
+    return '<div class="team-row"><span class="tname">'+esc(p.name)+' <span class="tiny">('+ROLE_SHORT[p.role]+', OVR '+p.rating+')</span></span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="addToWishlist(\''+p.id+'\')" '+(S.pendingWishlist.length>=3?"disabled":"")+'>+ Add</button></div>';
+  }).join("");
+  var chips = S.pendingWishlist.map(function(id){
+    var p = S.playerPool.filter(function(pp){return pp.id===id;})[0];
+    if(!p) return "";
+    return '<span class="wishlist-chip">🎯 '+esc(p.name)+' <button class="btn btn-ghost btn-sm" style="padding:1px 8px;" onclick="removeFromWishlist(\''+id+'\')">×</button></span>';
+  }).join(" ");
+  var wishlistBox = '<div class="card" style="padding:18px;margin-top:18px;max-width:520px;">'+
+    '<h3 class="h-disp" style="margin:0 0 6px;font-size:19px;">Pick Your Targets (optional)</h3>'+
+    '<p class="tiny" style="margin:0 0 12px;">Mark up to 3 players you really want — they\'ll be flagged with a 🎯 when they come up in the auction for your team.</p>'+
+    (chips ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">'+chips+'</div>' : '')+
+    (S.pendingWishlist.length<3 ? '<input type="text" placeholder="Search players to target…" value="'+esc(S.wishlistSearchQuery)+'" data-bind="wishlistSearchQuery" />' : '<div class="tiny">Target list full (3/3).</div>')+
+    (matchRows ? '<div style="margin-top:8px;">'+matchRows+'</div>' : '')+
+    '</div>';
+  return '<div class="screen"><div class="screen-head">'+
+    '<h1 class="screen-title">Auction Settings</h1>'+
+    '<p class="screen-desc">Fine-tune the economics and pace of the auction before the gavel drops.</p>'+
+    '</div>'+
+    '<div class="settings-grid">'+
+    '<div class="setting-box">'+numField("Starting purse (₹ Cr)","purse",1)+'</div>'+
+    '<div class="setting-box">'+numField("Bid increment (₹ Cr)","increment",0.1)+'</div>'+
+    '<div class="setting-box">'+numField("Max squad size","maxSquad",1)+'</div>'+
+    '<div class="setting-box">'+numField("Min squad size","minSquad",1)+'</div>'+
+    '<div class="setting-box">'+numField("Max overseas players","maxOverseas",1)+'</div>'+
+    '<div class="setting-box">'+numField("Number of teams","numTeams",1)+'</div>'+
+    '<div class="setting-box">'+selectField("AI difficulty","aiDifficulty",["Easy","Normal","Hard"])+'</div>'+
+    '<div class="setting-box">'+selectField("Auction speed","speed",["Chill","Normal","Fast"])+'</div>'+
+    '<div class="setting-box">'+
+    '<div class="toggle-row"><span class="small">Auto-bid for my team</span>'+
+    '<div class="toggle '+(st.autoBidUserOn?"on":"")+'" onclick="toggleAutoBidUser()"><div class="knob"></div></div></div>'+
+    (st.autoBidUserOn ? '<div style="margin-top:10px;">'+selectField("Strategy","autoBidStrategy",["Balanced","Aggressive","Value","Star Players Only"])+'</div>' : '')+
+    '</div>'+
+    '</div>'+
+    wishlistBox+
+    '<div style="display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;">'+
+    '<button class="btn btn-gold" onclick="launchAuctionFromSettings()">Enter the Auction Room →</button>'+
+    '<button class="btn btn-ghost" onclick="resetSettingsToDefault()">Restore Defaults</button>'+
+    '</div></div>';
+}
+window.addToWishlist = function(id){
+  if(S.pendingWishlist.length>=3 || S.pendingWishlist.indexOf(id)>=0) return;
+  S.pendingWishlist.push(id);
+  S.wishlistSearchQuery = "";
+  render();
+};
+window.removeFromWishlist = function(id){
+  S.pendingWishlist = S.pendingWishlist.filter(function(x){return x!==id;});
+  render();
+};
+
+/* ---------- AUCTION ROOM ---------- */
+function renderAuction(){
+  if(!S.currentPlayer && !S.flash){
+    return '<div class="screen"><div class="card" style="padding:40px;text-align:center;">'+
+      '<h2 class="h-disp" style="font-size:26px;">No auction in progress</h2>'+
+      '<p class="small">Start a new auction from the home screen.</p>'+
+      '<button class="btn btn-gold" style="margin-top:16px;" onclick="goScreen(\'teamSelect\')">Start Auction</button>'+
+      '</div></div>';
+  }
+  var p = S.currentPlayer;
+  var soldSoFar = S.soldList.length, totalPlayers = S.queue.length;
+  var pct = totalPlayers ? Math.round((soldSoFar+S.unsoldList.length)/totalPlayers*100) : 0;
+
+  var stageInner = "";
+  var seatSwitcher = "";
+  if(S.humanTeamIds.length>1){
+    var seatBtns = S.humanTeamIds.map(function(id){
+      var t = S.teams.filter(function(tt){return tt.id===id;})[0];
+      if(!t) return "";
+      var active = S.activeSeatId===id ? " active" : "";
+      return '<button class="tab-btn'+(active?" active":"")+'" onclick="setActiveSeat(\''+id+'\')">'+teamCrestHTML(t,18)+' '+esc(t.short||t.name)+'</button>';
+    }).join("");
+    seatSwitcher = '<div class="card side-card" style="margin-bottom:12px;"><div class="small" style="font-weight:700;margin-bottom:8px;">Passing the device? Pick who\'s bidding</div><div class="tab-row" style="margin-bottom:0;">'+seatBtns+'</div></div>';
+  }
+  if(p){
+    var highestTeam = S.currentBidder ? S.teams.filter(function(t){return t.id===S.currentBidder;})[0] : null;
+    var seat = activeSeat();
+    var timerHot = S.timerValue<=3 ? " hot" : "";
+    var targeters = S.teams.filter(function(t){ return t.wishlist && t.wishlist.indexOf(p.id)>=0; });
+    var targetPill = targeters.length ? '<div class="target-pill">🎯 Target for '+targeters.map(function(t){return esc(t.short||t.name);}).join(", ")+'</div>' : '';
+    var inc = S.settings.increment;
+    var amt1 = Math.round((S.currentBid+inc*1)*100)/100;
+    var amt2 = Math.round((S.currentBid+inc*2)*100)/100;
+    var amt5 = Math.round((S.currentBid+inc*5)*100)/100;
+    function bidBtn(mult, amt, label){
+      var dis = (!seat||S.passedThisRound[seat.id]||!canBidOnPlayer(seat,p,amt)) ? "disabled" : "";
+      return '<button class="btn '+(mult===1?"btn-gold":"btn-ghost")+'" onclick="userBid(null,'+mult+')" '+dis+'>'+label+' ₹'+fmt(amt)+' Cr</button>';
+    }
+    stageInner = '<div class="stage-top">'+
+      '<div style="display:flex;gap:16px;align-items:flex-start;">'+
+      playerAvatarHTML(p, 84)+
+      '<div><div class="pill">'+p.role.toUpperCase()+' • '+p.nationality.toUpperCase()+(p.overseas?" • OVERSEAS":"")+'</div>'+
+      '<div class="player-name h-disp">'+esc(p.name)+'</div>'+
+      '<div class="player-meta">Age '+p.age+'</div>'+targetPill+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px;align-items:flex-start;">'+
+      '<div class="rating-badge"><b>'+p.rating+'</b><span>OVR</span></div>'+
+      '<div class="timer-ring'+timerHot+'">'+S.timerValue+'</div>'+
+      '</div></div>'+
+      '<div class="price-row">'+
+      '<div class="price-box"><div class="label">Base Price</div><div class="val">₹'+fmt(p.basePrice)+' Cr</div></div>'+
+      '<div class="price-box current"><div class="label">Current Bid</div><div class="val">₹'+fmt(S.currentBid)+' Cr</div></div>'+
+      '<div class="price-box"><div class="label">'+(S.humanTeamIds.length>1 ? esc(seat?seat.short||seat.name:"")+"'s Purse" : "Your Purse")+'</div><div class="val">₹'+fmt(seat?seat.purse:0)+' Cr</div></div>'+
+      '</div>'+
+      '<div class="bidder-strip">Highest bidder: <b>'+(highestTeam ? esc(highestTeam.name) : "No bids yet")+'</b>'+(S.humanTeamIds.length>1&&seat?' · Bidding as <b>'+esc(seat.short||seat.name)+'</b>':'')+'</div>'+
+      '<div class="stat-bars">'+
+      statBar("Batting", p.batting)+statBar("Bowling", p.bowling)+statBar("Fielding", p.fielding)+
+      '</div>'+
+      '<div class="controls-row">'+
+      bidBtn(1, amt1, "BID")+bidBtn(2, amt2, "+2x")+bidBtn(5, amt5, "+5x")+
+      '<button class="btn btn-ghost" onclick="userPass()">PASS</button>'+
+      '<button class="btn btn-ghost" onclick="togglePause()">'+(S.paused?"RESUME":"PAUSE")+'</button>'+
+      '</div>';
+  }
+  if(S.flash){
+    var f = S.flash;
+    var confetti = f.type==="sold" ? confettiHTML() : "";
+    stageInner += '<div class="sold-flash '+f.type+'">'+confetti+(f.type==="sold" ? ("SOLD!<br/><span style=\"font-size:22px;font-family:var(--body);font-weight:600;\">"+esc(f.teamName)+" — ₹"+fmt(f.price)+" Cr</span>") : "UNSOLD")+'</div>';
+  }
+
+  var feedItems = S.feed.slice(-40).map(function(f){
+    return '<div class="feed-item '+f.cls+'">'+esc(f.text)+'</div>';
+  }).join("");
+
+  var sidebarTeams = S.teams.map(function(t){
+    var isMe = S.humanTeamIds.indexOf(t.id)>=0;
+    var isActiveSeat = isMe && S.humanTeamIds.length>1 && t.id===S.activeSeatId;
+    return '<div class="team-row '+(isMe?"me":"")+'" style="'+(isActiveSeat?"box-shadow:0 0 0 1px var(--gold);":"")+'"><span class="tname">'+teamCrestHTML(t,16)+esc(t.short||t.name)+(isMe?' <span class="tiny">('+(S.humanTeamIds.length>1?esc(t.personality):"You")+')</span>':'')+'</span>'+
+      '<span>₹'+fmt(t.purse)+' Cr</span><span class="tiny">'+t.squad.length+' pl</span></div>';
+  }).join("");
+
+  return '<div class="screen">'+
+    '<div class="screen-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;">'+
+    '<div><h1 class="screen-title" style="font-size:28px;">Live Auction Room</h1>'+
+    '<p class="screen-desc">'+soldSoFar+' sold · '+S.unsoldList.length+' unsold · '+(totalPlayers-soldSoFar-S.unsoldList.length)+' remaining</p></div>'+
+    '<div style="min-width:180px;"><div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div>'+
+    '<div class="tiny" style="margin-top:4px;">'+(soldSoFar+S.unsoldList.length)+' / '+totalPlayers+' players auctioned</div></div>'+
+    '</div>'+
+    '<div class="auction-layout">'+
+    '<div>'+
+    '<div class="card side-card"><div class="small" style="font-weight:700;margin-bottom:8px;">Teams</div>'+sidebarTeams+'</div>'+
+    '<div class="card side-card"><div class="toggle-row"><span class="small">Auto auction</span>'+
+    '<div class="toggle '+(S.settings.autoBidUserOn?"on":"")+'" onclick="toggleAutoBidUser()"><div class="knob"></div></div></div>'+
+    '<div class="toggle-row" style="margin-top:10px;"><span class="small">Sound</span>'+
+    '<div class="toggle '+(S.soundOn?"on":"")+'" onclick="toggleSound()"><div class="knob"></div></div></div>'+
+    '<div class="tiny" style="margin-top:10px;">Keys: B bid · P pass · Space pause</div>'+
+    '</div>'+
+    '<button class="btn btn-ghost btn-sm" style="width:100%;" onclick="confirmNewAuction()">New Auction</button>'+
+    '</div>'+
+    '<div>'+seatSwitcher+'<div class="player-stage">'+stageInner+'</div></div>'+
+    '<div>'+
+    '<div class="card side-card"><div class="small" style="font-weight:700;margin-bottom:6px;">Live Feed</div>'+
+    '<div class="feed-panel scrollbar-thin">'+feedItems+'</div></div>'+
+    '</div></div></div>';
+}
+function statBar(label, val){
+  return '<div><div class="stat-mini">'+label+'</div><div class="bar-track"><div class="bar-fill" style="width:'+val+'%"></div></div></div>';
+}
+
+/* ---------- MY SQUAD ---------- */
+function renderSquad(){
+  if(!S.humanTeamIds.length){
+    return '<div class="screen"><p class="small">No active team. Start an auction first.</p></div>';
+  }
+  if(!S.squadViewTeamId || S.humanTeamIds.indexOf(S.squadViewTeamId)<0) S.squadViewTeamId = S.humanTeamIds[0];
+  var team = S.teams.filter(function(t){return t.id===S.squadViewTeamId;})[0];
+  if(!team) return '<div class="screen"><p class="small">No active team. Start an auction first.</p></div>';
+  var friendTabs = "";
+  if(S.humanTeamIds.length>1){
+    friendTabs = '<div class="tab-row">'+S.humanTeamIds.map(function(id){
+      var t = S.teams.filter(function(tt){return tt.id===id;})[0];
+      if(!t) return "";
+      return '<button class="tab-btn '+(id===S.squadViewTeamId?"active":"")+'" onclick="setSquadViewTeam(\''+id+'\')">'+teamCrestHTML(t,16)+esc(t.short||t.name)+'</button>';
+    }).join("")+'</div>';
+  }
+  var filter = S.squadFilterRole;
+  var squad = team.squad.filter(function(p){ return filter==="All" || p.role===filter; });
+  var tabs = ["All"].concat(ROLES).map(function(r){
+    return '<button class="tab-btn '+(filter===r?"active":"")+'" onclick="setSquadFilter(\''+r+'\')">'+r+'</button>';
+  }).join("");
+  var rows = squad.map(function(p){
+    return '<div class="player-list-row"><div style="display:flex;align-items:center;gap:8px;">'+playerAvatarHTML(p,26)+esc(p.name)+'</div>'+
+      '<div class="role-tag">'+ROLE_SHORT[p.role]+'</div>'+
+      '<div>OVR '+p.rating+'</div><div>₹'+fmt(p.soldPrice!=null?p.soldPrice:p.basePrice)+' Cr</div>'+
+      '<div class="tiny">'+p.nationality+'</div></div>';
+  }).join("");
+  var totalSpent = team.squad.reduce(function(a,p){return a+(p.soldPrice||0);},0);
+  var bal = computeBalance(team);
+  return '<div class="screen"><div class="screen-head">'+
+    '<h1 class="screen-title">'+teamCrestHTML(team,32)+esc(team.name)+'</h1>'+
+    '<p class="screen-desc">'+(S.humanTeamIds.length>1?"Squad, purse, and balance for the friend currently selected above.":"Your squad, purse, and balance at a glance.")+'</p></div>'+
+    friendTabs+
+    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;">'+
+    '<div class="card" style="padding:16px;">'+
+    '<div class="tab-row">'+tabs+'</div>'+
+    '<div class="player-list-row head"><div>Player</div><div>Role</div><div>Rating</div><div>Price</div><div>Nation</div></div>'+
+    (rows || '<div class="small" style="padding:16px 0;">No players yet in this category.</div>')+
+    '</div>'+
+    '<div>'+
+    '<div class="card" style="padding:18px;margin-bottom:14px;">'+
+    '<div class="small">Total spent</div><div class="h-disp" style="font-size:28px;">₹'+fmt(totalSpent)+' Cr</div>'+
+    '<div class="small" style="margin-top:10px;">Purse remaining</div><div class="h-disp" style="font-size:28px;color:var(--gold);">₹'+fmt(team.purse)+' Cr</div>'+
+    '</div>'+
+    '<div class="card" style="padding:18px;">'+
+    '<div class="balance-ring"><div class="balance-num">'+bal.score+'</div><div><div class="small">Squad Balance / 100</div>'+
+    '<div class="tiny">'+squadBalanceNote(bal, team)+'</div></div></div>'+
+    '</div></div></div></div>';
+}
+window.setSquadFilter = function(r){ S.squadFilterRole = r; render(); };
+window.setSquadViewTeam = function(id){ S.squadViewTeamId = id; render(); };
+
+function squadBalanceNote(bal, team){
+  var n = team.squad.length;
+  if(n===0) return "No players bought yet.";
+  var weak = weakestRole(bal.counts, n);
+  var strong = strongestRole(bal.counts, n);
+  var msgs = [];
+  if(bal.score>=80) msgs.push("Excellent, well-rounded squad.");
+  else if(bal.score>=60) msgs.push("Solid squad with a couple of gaps.");
+  else msgs.push("Squad needs more depth and balance.");
+  msgs.push("Needs another specialist "+weak.toLowerCase()+".");
+  msgs.push("Strongest area: "+strong.toLowerCase()+"s.");
+  return msgs.join(" ");
+}
+
+/* ---------- TEAM MANAGEMENT ---------- */
+function renderManagement(){
+  var teams = S.teams;
+  if(!teams.length) return '<div class="screen"><p class="small">No active auction. Start one to manage teams.</p></div>';
+  var activeId = S.managementTeamId || teams[0].id;
+  var team = teams.filter(function(t){return t.id===activeId;})[0];
+  var tabs = teams.map(function(t){
+    return '<button class="tab-btn '+(t.id===activeId?"active":"")+'" onclick="setManagementTeam(\''+t.id+'\')">'+teamCrestHTML(t,16)+esc(t.short||t.name)+'</button>';
+  }).join("");
+  var bal = computeBalance(team);
+  var rows = team.squad.slice().sort(function(a,b){return b.rating-a.rating;}).map(function(p){
+    return '<div class="player-list-row"><div style="display:flex;align-items:center;gap:8px;">'+playerAvatarHTML(p,26)+esc(p.name)+'</div><div class="role-tag">'+ROLE_SHORT[p.role]+'</div>'+
+      '<div>OVR '+p.rating+'</div><div>₹'+fmt(p.soldPrice||0)+' Cr</div><div class="tiny">'+p.nationality+'</div></div>';
+  }).join("");
+  return '<div class="screen"><div class="screen-head"><h1 class="screen-title">Team Management</h1>'+
+    '<p class="screen-desc">Inspect any franchise\'s squad, purse, and role distribution.</p></div>'+
+    '<div class="tab-row">'+tabs+'</div>'+
+    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;">'+
+    '<div class="card" style="padding:16px;">'+
+    '<div class="player-list-row head"><div>Player</div><div>Role</div><div>Rating</div><div>Price</div><div>Nation</div></div>'+
+    (rows || '<div class="small" style="padding:16px;">No players bought yet.</div>')+
+    '</div>'+
+    '<div class="card" style="padding:18px;">'+
+    '<div class="small">Purse remaining</div><div class="h-disp" style="font-size:26px;color:var(--gold);">₹'+fmt(team.purse)+' Cr</div>'+
+    '<div class="small" style="margin-top:12px;">Players bought</div><div class="h-disp" style="font-size:26px;">'+team.squad.length+'</div>'+
+    '<div class="small" style="margin-top:12px;">Average rating</div><div class="h-disp" style="font-size:26px;">'+bal.avgRating+'</div>'+
+    '<div class="small" style="margin-top:12px;">Overseas players</div><div class="h-disp" style="font-size:26px;">'+overseasCount(team)+' / '+S.settings.maxOverseas+'</div>'+
+    '<div class="small" style="margin-top:12px;">Controlled by</div><div class="h-disp" style="font-size:20px;">'+(team.id===S.userTeamId?"You":(team.isUser?"A friend":team.personality+" AI"))+'</div>'+
+    '</div></div></div>';
+}
+window.setManagementTeam = function(id){ S.managementTeamId = id; render(); };
+
+/* ---------- RESULTS ---------- */
+function renderResults(){
+  if(!S.teams.length) return '<div class="screen"><p class="small">No completed auction yet.</p></div>';
+  var results = computeResults();
+  var stats = computeStats();
+  var rows = results.map(function(r, i){
+    var xi = r.xi.map(function(p, idx){
+      return '<div class="xi-slot"><span><span class="pos">'+(idx+1)+'</span>'+esc(p.name)+' <span class="tiny">('+ROLE_SHORT[p.slot]+')</span></span><span class="tiny">'+p.rating+'</span></div>';
+    }).join("");
+    var bench = r.bench.slice(0,6).map(function(p){return esc(p.name)+" ("+p.rating+")";}).join(", ") || "—";
+    var weak = r.team.squad.length ? weakestRole(r.balance.counts, r.team.squad.length) : "—";
+    var top3 = r.team.squad.slice().sort(function(a,b){return b.rating-a.rating;}).slice(0,3).map(function(p){return esc(p.name);}).join(", ") || "—";
+    return '<div class="rank-row '+(i===0?"first":"")+'">'+
+      '<div class="rank-num">#'+(i+1)+'</div>'+
+      '<div style="flex:1;min-width:200px;">'+
+      '<div style="font-weight:700;font-size:16px;">'+teamCrestHTML(r.team,20)+esc(r.team.name)+(r.team.id===S.userTeamId?' <span class="pill" style="margin-left:6px;">You</span>':(r.team.isUser?' <span class="pill" style="margin-left:6px;">Friend</span>':''))+'</div>'+
+      '<div class="tiny">Best players: '+top3+'</div>'+
+      '<div class="tiny">Needs: another '+weak.toLowerCase()+' · Purse left ₹'+fmt(r.team.purse)+' Cr · Balance '+r.balance.score+'/100</div>'+
+      '<details style="margin-top:8px;"><summary class="tiny" style="cursor:pointer;">Suggested Playing XI</summary>'+xi+
+      '<div class="tiny" style="margin-top:6px;">Bench: '+bench+'</div></details>'+
+      '</div>'+
+      '<div class="rank-score">'+r.score+'</div>'+
+      '</div>';
+  }).join("");
+
+  function statTile(label, val){
+    return '<div class="stat-tile"><div class="label">'+label+'</div><div class="val">'+esc(val)+'</div></div>';
+  }
+
+  return '<div class="screen"><div class="screen-head">'+
+    '<h1 class="screen-title">Auction Complete</h1>'+
+    '<p class="screen-desc">Every franchise ranked by squad strength — not by who you were controlling.</p></div>'+
+    rows+
+    '<h2 class="h-disp" style="font-size:24px;margin:30px 0 14px;">Auction Statistics</h2>'+
+    '<div class="grid-stats">'+
+    statTile("Most expensive player", stats.mostExpensive||"—")+
+    statTile("Biggest bargain", stats.biggestBargain||"—")+
+    statTile("Biggest surprise buy", stats.surprise||"—")+
+    statTile("Most active team", stats.mostActive)+
+    statTile("Most purse remaining", stats.mostPurseLeft)+
+    statTile("Strongest batting", stats.strongestBatting)+
+    statTile("Strongest bowling", stats.strongestBowling)+
+    statTile("Most balanced squad", stats.mostBalanced)+
+    statTile("Unsold players", String(stats.unsoldCount))+
+    '</div>'+
+    '<div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;">'+
+    '<button class="btn btn-gold" onclick="goScreen(\'comparison\')">Compare Teams</button>'+
+    '<button class="btn btn-ghost" onclick="goScreen(\'teamSelect\')">New Auction</button>'+
+    '<button class="btn btn-ghost" onclick="goScreen(\'history\')">View History</button>'+
+    '</div></div>';
+}
+
+/* ---------- COMPARISON ---------- */
+function renderComparison(){
+  if(!S.teams.length) return '<div class="screen"><p class="small">No active auction to compare.</p></div>';
+  var metrics = [
+    ["Batting", function(t){ return avgOf(t, ["Batter","Wicketkeeper"], "batting"); }],
+    ["Bowling", function(t){ return avgOf(t, ["Fast Bowler","Spinner"], "bowling"); }],
+    ["All-rounders", function(t){ return countRole(t,"All-rounder"); }],
+    ["Wicketkeeping", function(t){ return avgOf(t, ["Wicketkeeper"], "batting"); }],
+    ["Bench strength", function(t){ return generatePlayingXI(t).bench.reduce(function(a,p){return a+p.rating;},0)/Math.max(1,generatePlayingXI(t).bench.length); }],
+    ["Squad balance", function(t){ return computeBalance(t).score; }],
+    ["Overall", function(t){ return computeResults().filter(function(r){return r.team.id===t.id;})[0].score; }]
+  ];
+  function avgOf(t, roles, key){
+    var arr = t.squad.filter(function(p){return roles.indexOf(p.role)>=0;});
+    if(!arr.length) return 0;
+    return arr.reduce(function(a,p){return a+p[key];},0)/arr.length;
+  }
+  function countRole(t, role){ return t.squad.filter(function(p){return p.role===role;}).length * 10; }
+
+  var maxVals = metrics.map(function(m){ return Math.max(1, Math.max.apply(null, S.teams.map(m[1]))); });
+
+  var blocks = metrics.map(function(m, mi){
+    var rows = S.teams.map(function(t){
+      var v = m[1](t);
+      var pct = clamp((v/maxVals[mi])*100, 2, 100);
+      return '<div class="compare-bar-row"><div class="lbl"><span>'+esc(t.short||t.name)+'</span><span>'+Math.round(v)+'</span></div>'+
+        '<div class="compare-bar-track"><div class="compare-bar-fill" style="width:'+pct+'%;background:'+t.color+'"></div></div></div>';
+    }).join("");
+    return '<div class="card" style="padding:18px;"><h3 class="h-disp" style="margin:0 0 12px;font-size:19px;">'+m[0]+'</h3>'+rows+'</div>';
+  }).join("");
+
+  return '<div class="screen"><div class="screen-head">'+
+    '<h1 class="screen-title">Team Comparison</h1>'+
+    '<p class="screen-desc">Side-by-side strength across every dimension that matters.</p></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">'+blocks+'</div>'+
+    '</div>';
+}
+
+/* ---------- HOW TO PLAY ---------- */
+function renderHowToPlay(){
+  var steps = [
+    "Choose your team from the ten franchises, or create your own custom team.",
+    "Set your purse, bid increment, squad limits, and AI difficulty — or keep the defaults.",
+    "Start the auction. Players enter one at a time, starting at their base price.",
+    "Bid when you want a player — the AI franchises will compete for the ones they need.",
+    "Watch your purse and squad limits. You can't bid more than you have.",
+    "Build a balanced squad: enough batters, bowlers, an all-rounder or two, and a keeper.",
+    "When every player has been through the auction, see the final rankings and stats.",
+    "Compare your squad against every AI franchise and see who really built the best team."
+  ];
+  var html = steps.map(function(s,i){
+    return '<div class="howto-step"><div class="howto-num">'+(i+1)+'</div><div class="small" style="padding-top:4px;">'+s+'</div></div>';
+  }).join("");
+  return '<div class="screen"><div class="screen-head">'+
+    '<h1 class="screen-title">How to Play</h1>'+
+    '<p class="screen-desc">A quick walkthrough before you sit down at the table.</p></div>'+
+    '<div class="card" style="padding:6px 20px;">'+html+'</div>'+
+    '<div style="margin-top:22px;"><button class="btn btn-gold" onclick="goScreen(\'teamSelect\')">Start Auction</button></div>'+
+    '</div>';
+}
+
+/* ---------- HISTORY ---------- */
+function renderHistory(){
+  var list = S.savedHistoryList||[];
+  if(!hasStorage()){
+    return '<div class="screen"><div class="screen-head"><h1 class="screen-title">Auction History</h1></div>'+
+      '<p class="small">Persistent history isn\'t available in this environment right now.</p></div>';
+  }
+  var rows = list.map(function(h){
+    var top = h.results && h.results[0] ? h.results[0].name+" — "+h.results[0].score : "";
+    return '<div class="history-row"><div>'+
+      '<div style="font-weight:700;">'+esc(h.name)+'</div>'+
+      '<div class="tiny">'+new Date(h.date).toLocaleString()+' · Winner: '+esc(top)+'</div></div>'+
+      '<div style="display:flex;gap:8px;">'+
+      '<button class="btn btn-ghost btn-sm" onclick="renameHistoryEntry(\''+h.id+'\')">Rename</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="deleteHistoryEntry(\''+h.id+'\')">Delete</button>'+
+      '</div></div>';
+  }).join("");
+  return '<div class="screen"><div class="screen-head"><h1 class="screen-title">Auction History</h1>'+
+    '<p class="screen-desc">Every completed auction, saved locally in your browser.</p></div>'+
+    (rows || '<p class="small">No completed auctions yet — finish one to see it here.</p>')+
+    '</div>';
+}
+window.deleteHistoryEntry = function(id){
+  loadHistoryList(function(list){
+    list = list.filter(function(h){return h.id!==id;});
+    saveHistoryList(list);
+    S.savedHistoryList = list;
+    render();
+  });
+};
+window.renameHistoryEntry = function(id){
+  var name = prompt("Rename this auction:");
+  if(!name) return;
+  loadHistoryList(function(list){
+    list.forEach(function(h){ if(h.id===id) h.name=name; });
+    saveHistoryList(list);
+    S.savedHistoryList = list;
+    render();
+  });
+};
+
+/* ---------- CUSTOMIZE ---------- */
+function renderCustomize(){
+  var q = S.playerSearchQuery.toLowerCase();
+  var sortKey = S.playerSortKey;
+  var pool = S.playerPool.filter(function(p){
+    if(!q) return true;
+    return p.name.toLowerCase().indexOf(q)>=0 || p.role.toLowerCase().indexOf(q)>=0 || p.nationality.toLowerCase().indexOf(q)>=0;
+  }).slice().sort(function(a,b){
+    if(sortKey==="rating") return b.rating-a.rating;
+    if(sortKey==="basePrice") return b.basePrice-a.basePrice;
+    if(sortKey==="role") return a.role.localeCompare(b.role);
+    if(sortKey==="age") return a.age-b.age;
+    return 0;
+  }).slice(0,60);
+
+  var rows = pool.map(function(p){
+    return '<div class="player-list-row">'+
+      '<div style="display:flex;align-items:center;gap:8px;">'+playerAvatarHTML(p,30)+
+      '<label style="cursor:pointer;" title="Upload a real photo for this player">'+
+      '<input type="file" accept="image/*" style="display:none;" onchange="handlePlayerPhotoUpload(\''+p.id+'\',this)" />'+
+      '<span class="tiny" style="text-decoration:underline;">'+esc(p.name)+'</span></label></div>'+
+      '<div class="role-tag">'+ROLE_SHORT[p.role]+'</div>'+
+      '<div><input type="number" min="1" max="99" value="'+p.rating+'" style="width:52px;padding:4px 6px;" onchange="editPlayerField(\''+p.id+'\',\'rating\',this.value)" /></div>'+
+      '<div><input type="number" min="0.1" step="0.1" value="'+p.basePrice+'" style="width:60px;padding:4px 6px;" onchange="editPlayerField(\''+p.id+'\',\'basePrice\',this.value)" /></div>'+
+      '<div><button class="btn btn-ghost btn-sm" onclick="removePlayer(\''+p.id+'\')">Remove</button></div>'+
+      '</div>';
+  }).join("");
+
+  var roleOpts = ROLES.map(function(r){return '<option value="'+r+'">'+r+'</option>';}).join("");
+  var natOpts = NATIONS.concat(["India"]).filter(function(v,i,a){return a.indexOf(v)===i;}).map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");
+
+  return '<div class="screen"><div class="screen-head">'+
+    '<h1 class="screen-title">Customize Auction</h1>'+
+    '<p class="screen-desc">Edit the player pool, add new players, or tweak settings before starting.</p></div>'+
+    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;">'+
+    '<div class="card" style="padding:16px;">'+
+    '<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">'+
+    '<input type="text" placeholder="Search players…" style="flex:1;min-width:160px;" value="'+esc(S.playerSearchQuery)+'" data-bind="playerSearchQuery" />'+
+    '<select data-bind="playerSortKey">'+
+    '<option value="rating" '+(sortKey==="rating"?"selected":"")+'>Sort: Rating</option>'+
+    '<option value="basePrice" '+(sortKey==="basePrice"?"selected":"")+'>Sort: Base price</option>'+
+    '<option value="role" '+(sortKey==="role"?"selected":"")+'>Sort: Role</option>'+
+    '<option value="age" '+(sortKey==="age"?"selected":"")+'>Sort: Age</option>'+
+    '</select></div>'+
+    '<div class="player-list-row head"><div>Player</div><div>Role</div><div>Rating</div><div>Base</div><div></div></div>'+
+    rows+
+    '<div class="tiny" style="margin-top:10px;">Showing up to 60 of '+S.playerPool.length+' players.</div>'+
+    '</div>'+
+    '<div class="card" style="padding:18px;">'+
+    '<h3 class="h-disp" style="margin:0 0 12px;font-size:19px;">Add Player</h3>'+
+    '<form onsubmit="return handleAddPlayer(event)" style="display:flex;flex-direction:column;gap:10px;">'+
+    '<input type="text" name="name" placeholder="Player name" required />'+
+    '<select name="role">'+roleOpts+'</select>'+
+    '<select name="nationality">'+natOpts+'</select>'+
+    '<div style="display:flex;gap:8px;"><input type="number" name="rating" placeholder="Rating" min="1" max="99" style="flex:1;" />'+
+    '<input type="number" name="basePrice" step="0.1" placeholder="Base ₹Cr" style="flex:1;" /></div>'+
+    '<div style="display:flex;gap:8px;"><input type="number" name="batting" placeholder="Batting" min="1" max="99" style="flex:1;" />'+
+    '<input type="number" name="bowling" placeholder="Bowling" min="1" max="99" style="flex:1;" />'+
+    '<input type="number" name="fielding" placeholder="Fielding" min="1" max="99" style="flex:1;" /></div>'+
+    '<input type="number" name="age" placeholder="Age" min="16" max="45" />'+
+    '<label class="field">Player photo (optional)<input type="file" name="photo" accept="image/*" style="font-size:12.5px;" /></label>'+
+    '<button class="btn btn-gold btn-sm" type="submit">Add to Pool</button>'+
+    '</form></div></div></div>';
+}
+window.handleAddPlayer = function(ev){
+  ev.preventDefault();
+  var f = ev.target;
+  var fields = {
+    name:f.name.value, role:f.role.value, nationality:f.nationality.value,
+    rating:f.rating.value, basePrice:f.basePrice.value, batting:f.batting.value,
+    bowling:f.bowling.value, fielding:f.fielding.value, age:f.age.value
+  };
+  var file = f.photo && f.photo.files && f.photo.files[0];
+  if(file){
+    readFileAsDataUrl(file, function(dataUrl){
+      fields.photoUrl = dataUrl;
+      addCustomPlayer(fields);
+    });
+  } else {
+    addCustomPlayer(fields);
+  }
+  return false;
+};
+
+/* =========================================================
+   TWO-WAY BINDING for plain inputs (data-bind)
+   ========================================================= */
+function getPath(obj, path){
+  return path.split(".").reduce(function(o,k){ return o? o[k] : undefined; }, obj);
+}
+function setPath(obj, path, val){
+  var parts = path.split(".");
+  var o = obj;
+  for(var i=0;i<parts.length-1;i++){ o = o[parts[i]]; }
+  o[parts[parts.length-1]] = val;
+}
+function wireDynamicInputs(){
+  var els = root.querySelectorAll("[data-bind]");
+  els.forEach(function(el){
+    el.addEventListener("change", function(){
+      var path = el.getAttribute("data-bind");
+      var val = el.type==="number" ? parseFloat(el.value) : el.value;
+      if(path.indexOf("settings.")===0){
+        window.updateSetting(path.replace("settings.",""), el.value);
+        return;
+      }
+      setPath(S, path, val);
+      if(path==="playerSearchQuery" || path==="playerSortKey" || path==="wishlistSearchQuery"){ render(); return; }
+    });
+    if(el.tagName==="INPUT" && el.type==="text" && (el.getAttribute("data-bind")==="playerSearchQuery" || el.getAttribute("data-bind")==="wishlistSearchQuery")){
+      el.addEventListener("input", function(){
+        var p = el.getAttribute("data-bind");
+        S[p] = el.value; render(); preserveFocus(el);
+      });
+    }
+  });
+}
+function preserveFocus(el){
+  // no-op placeholder: full re-render loses focus on search input; acceptable tradeoff for simplicity
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+if(typeof document!=="undefined" && document.addEventListener){
+  document.addEventListener("keydown", function(e){
+    if(S.screen!=="auction" || !S.currentPlayer || S.flash) return;
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if(tag==="INPUT" || tag==="SELECT" || tag==="TEXTAREA") return;
+    if(e.key==="b" || e.key==="B"){ e.preventDefault(); window.userBid(); }
+    else if(e.key==="p" || e.key==="P"){ e.preventDefault(); window.userPass(); }
+    else if(e.key===" "){ e.preventDefault(); window.togglePause(); }
+  });
+}
+loadActiveAuctionCheck();
+
+})();
+</script>
+</body>
+</html>
